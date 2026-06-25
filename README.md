@@ -1,4 +1,4 @@
-🏠 BringMeHome – AI-Powered Missing Person Registry & Sighting Tracker
+🏠 <b>BringMeHome – AI-Powered Missing Person Registry & Sighting Tracker
 
 Using AI and community collaboration to help reunite missing individuals with their families.
 
