@@ -197,7 +197,7 @@ BringMeHome/
 <br><img src="screenshots/registry2.png" width="300" height="300">
 
 
-📢 Report Found Sighting
+📢 Report Found Sighting<b>
 <br><img src="screenshots/reportFound form.png" width="300" height="300">)
 
 
