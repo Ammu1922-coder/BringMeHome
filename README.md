@@ -180,16 +180,25 @@ BringMeHome/
 📷 Screenshots
 
 📝 signup and login 
-![signup Portal](screenshots/sign up.png)
-![Login Portal](screenshots/login.png)
+<img src="screenshots/login.png" width="200" height="200">
+<img src="screenshots/sign up.png" width="200" height="200">
+
+📝 Home page
+<img src="screenshots/home.png" width="200" height="200">
+
+📝 dashboard 
+<img src="screenshots/dashboard.png" width="200" height="200">
 
 📝 Vulnerable Individual Registration
-
-![Login Portal](screenshots/.png)
+<img src="screenshots/Missing person registry.png" width="200" height="200">
+<img src="screenshots/registry2.png" width="200" height="200">
 
 📢 Report Found Sighting
+<img src="screenshots/reportFound form.png" width="200" height="200">)
 
-(Add Screenshot)
+
+📝 safegaurd registration
+<img src="screenshots/safegaurd registry.png" width="200" height="200">
 
 🤖 AI Match Dashboard
 
