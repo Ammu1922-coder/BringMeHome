@@ -198,7 +198,7 @@ BringMeHome/
 
 
 📝 safegaurd registration
-<img src="screenshots/safegaurd registry.png" width="200" height="200">
+<img src="screenshots/safegaurd registry.png" width="300" height="300">
 
 🤖 AI Match Dashboard
 
