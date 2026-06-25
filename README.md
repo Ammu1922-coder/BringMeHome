@@ -179,12 +179,12 @@ BringMeHome/
 
 📷 Screenshots
 
-📝 signup and login 
+📝 signup and login<br> 
 <br><img src="screenshots/login.png" width="300" height="300">
 <br><img src="screenshots/signup.png" width="300" height="300">
 
 
-📝 Home page
+📝 Home page<br>
 <br><img src="screenshots/home.png" width="300" height="300">
 
 
