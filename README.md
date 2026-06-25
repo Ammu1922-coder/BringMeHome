@@ -180,8 +180,8 @@ BringMeHome/
 📷 Screenshots
 
 📝 signup and login 
-<img src="screenshots/login.png" width="300" height="300">
-<img src="screenshots/sign up.png" width="300" height="300">
+<br><img src="screenshots/login.png" width="300" height="300">
+<br><img src="screenshots/sign up.png" width="300" height="300">
 
 
 📝 Home page
