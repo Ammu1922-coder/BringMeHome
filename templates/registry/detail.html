@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}{{ individual.full_name }}'s Dashboard - BringMeHome{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-12">
+    <!-- Success registration notification banner -->
+    {% if messages %}
+        <div class="mb-8 space-y-2">
+            {% for message in messages %}
+                <div class="p-4 text-sm font-semibold rounded-xl bg-green-50 text-green-800 border border-green-200 flex items-center">
+                    <svg class="h-5 w-5 text-green-500 mr-2.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Top Dashboard Header with status -->
+    <div class="bg-white border border-slate-100 shadow-lg rounded-2xl p-6 mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+        <div class="flex items-center space-x-4">
+            <div class="h-14 w-14 rounded-full bg-primary/5 flex items-center justify-center text-primary border border-primary/10">
+                <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2v-3M1H9l3 3h3" />
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-2xl font-black text-primary tracking-tight">Family Care Dashboard</h1>
+                <p class="text-xs text-slate-500 font-medium">Registered individual ID: <span class="text-slate-800 select-all font-mono font-bold">{{ individual.id }}</span></p>
+            </div>
+        </div>
+
+        <!-- Dynamic Status Badge Selector -->
+        {% if individual.status == 'missing' %}
+        <div class="flex items-center space-x-3 self-start md:self-auto bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-200">
+            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Current Status:</span>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-200 animate-bounce">
+                <span class="h-2 w-2 rounded-full bg-red-500 mr-1.5 animate-ping"></span>
+                Alert: Missing
+            </span>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Main Content Layout Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Left Column: Visual Assets Card (Photo & QR Code) -->
+        <div class="space-y-6">
+            
+            <!-- Photograph Card -->
+            <div class="bg-white border border-slate-100 shadow-md rounded-2xl p-6 text-center">
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Official Profile Photo</h3>
+                <div class="aspect-square w-full max-w-[200px] mx-auto rounded-xl overflow-hidden border border-slate-200 shadow-inner">
+                    {% if individual.photo %}
+                        <img src="{{ individual.photo.url }}" alt="{{ individual.full_name }}" class="h-full w-full object-cover">
+                    {% else %}
+                        <div class="h-full w-full bg-slate-100 flex items-center justify-center text-slate-300">
+                            <span class="text-sm font-semibold">No Image</span>
+                        </div>
+                    {% endif %}
+                </div>
+                <h2 class="text-xl font-bold text-primary mt-4">{{ individual.full_name }}</h2>
+                <p class="text-xs text-slate-500 font-semibold mt-0.5">Age {{ individual.age }}</p>
+            </div>
+
+            <!-- Automatically Generated Smart ID QR Card -->
+            <div class="bg-white border border-slate-100 shadow-md rounded-2xl p-6 text-center">
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Emergency Scan QR Code</h3>
+                <div class="bg-brandBg border border-slate-100 rounded-xl p-4 inline-block shadow-inner">
+                    {% if individual.qr_code_image %}
+                        <img src="{{ individual.qr_code_image.url }}" alt="Smart QR Code" class="h-40 w-40">
+                    {% else %}
+                        <div class="h-40 w-40 bg-slate-100 flex items-center justify-center text-slate-300">
+                            <span class="text-xs font-semibold">Generating...</span>
+                        </div>
+                    {% endif %}
+                </div>
+                <p class="text-[10px] text-slate-400 mt-2.5 max-w-xs mx-auto">
+                    This QR code points directly to a secure, public-safe viewport. Anyone scanning it gets immediate emergency contacts without seeing your home address.
+                </p>
+            </div>
+
+        </div>
+
+        <!-- Right Column (Span 2): Administrative details, emergency metadata, and actions -->
+        <div class="lg:col-span-2 space-y-6">
+            
+            <!-- Quick Actions Panel -->
+            <div class="bg-primary shadow-lg border border-primary-dark rounded-2xl p-6 text-white relative overflow-hidden">
+                <div class="absolute right-0 top-0 -mt-12 -mr-12 w-32 h-32 bg-accent/20 rounded-full blur-2xl"></div>
+                <h3 class="text-lg font-bold tracking-tight mb-2">Instant Emergency Utilities</h3>
+                <p class="text-xs text-slate-300 leading-relaxed mb-5 max-w-xl">
+                    Generate highly professional identification templates. We recommend pasting on walls at crowded places.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <a href="{% url 'digital_id_card' uuid=individual.id %}" target="_blank" class="inline-flex justify-center items-center px-5 py-2.5 rounded-lg font-bold text-sm bg-accent hover:bg-accent-dark text-white transition-all shadow-md">
+                        <svg class="h-4.5 w-4.5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                        </svg>
+                        Generate Poster
+                    </a>
+                    <a href="{% url 'public_scan' uuid=individual.id %}" target="_blank" class="inline-flex justify-center items-center px-5 py-2.5 rounded-lg font-bold text-sm bg-primary-light hover:bg-slate-800 text-white border border-slate-700/60 transition-all">
+                        <svg class="h-4.5 w-4.5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        View Sighting matches/citizen scans
+                      </a>
+                </div>
+            </div>
+
+            <!-- Profile Details Metadata Grid -->
+            <div class="bg-white border border-slate-100 shadow-md rounded-2xl p-6 sm:p-8 space-y-6">
+                
+                <!-- Section: Critical Alert Notes -->
+                <div class="bg-red-50/50 border border-red-100 rounded-xl p-3 max-w-full overflow-hidden">
+                    <h4 class="text-[9px] font-black uppercase tracking-[0.18em] text-red-600 mb-1 flex items-center">
+                        <svg class="h-3.5 w-3.5 mr-1 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        Critical Care & Medical Notes
+                    </h4>
+                    <p class="text-[11px] text-slate-700 leading-snug font-medium break-words overflow-wrap-anywhere">
+                        {% if individual.medical_notes %}
+                            {{ individual.medical_notes }}
+                        {% else %}
+                            <span class="text-slate-400 italic">No specific emergency medical conditions registered.</span>
+                        {% endif %}
+                    </p>
+                </div>
+
+                <!-- Section: Emergency Contacts -->
+                <div>
+                    <h3 class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-3">Assigned Emergency Contact</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <span class="text-[10px] text-slate-400 font-bold uppercase block">Caretaker/Contact Name</span>
+                            <span class="text-sm font-bold text-primary mt-0.5 block">{{ individual.emergency_contact_name }}</span>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <span class="text-[10px] text-slate-400 font-bold uppercase block">Telephone Number</span>
+                            <span class="text-sm font-bold text-primary mt-0.5 block">{{ individual.emergency_contact_phone }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section: Locations & General Addresses -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Protected Address (Shielded)</h4>
+                        <p class="text-sm text-slate-700 leading-relaxed">
+                            {{ individual.address }}
+                        </p>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Frequented / Last Known Areas</h4>
+                        <p class="text-sm text-slate-700 leading-relaxed">
+                            {% if individual.last_known_location %}
+                                {{ individual.last_known_location }}
+                            {% else %}
+                                <span class="text-slate-400 italic">No specific locations logged.</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+</div>
+{% endblock %}

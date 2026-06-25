@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-12">
+  <div class="bg-white shadow-xl rounded-2xl p-8 sm:p-10">
+    <h1 class="text-3xl font-black text-primary">Login</h1>
+    <p class="mt-2 text-slate-600">Welcome back. Sign in to continue protecting your family.</p>
+
+    <form method="post" class="mt-8 space-y-6">
+      {% csrf_token %}
+      {% if next %}<input type="hidden" name="next" value="{{ next }}" />{% endif %}
+
+      {% if form.errors %}
+        <div class="p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          Invalid username or password.
+        </div>
+      {% endif %}
+
+      <div class="space-y-2">
+        <label for="id_username" class="block text-sm font-semibold text-slate-700">Username</label>
+        <input type="text" name="username" autofocus autocomplete="username" required id="id_username" class="w-full rounded-lg border border-black/60 p-3 focus:border-black focus:ring-0" />
+      </div>
+
+      <div class="space-y-2">
+        <label for="id_password" class="block text-sm font-semibold text-slate-700">Password</label>
+        <input type="password" name="password" autocomplete="current-password" required id="id_password" class="w-full rounded-lg border border-black/60 p-3 focus:border-black focus:ring-0" />
+      </div>
+
+      <button type="submit" class="w-full inline-flex justify-center items-center px-6 py-3 border border-transparent text-sm font-bold rounded-lg shadow-lg text-white bg-primary hover:bg-primary-light transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0">
+        Sign in
+      </button>
+
+      <p class="text-center text-xs text-slate-500">Don’t have an account? <a class="text-accent font-semibold" href="{% url 'signup' %}">Sign up</a></p>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+

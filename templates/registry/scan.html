@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Safety Scan Sighting - BringMeHome{% endblock %}
+
+{% block content %}
+<!-- Calming mobile-first viewport canvas -->
+<div class="min-h-[80vh] flex flex-col items-center justify-center px-4 py-8 bg-slate-50">
+    
+    <!-- Minimal Safe Sighting Card -->
+    <div class="w-full max-w-md bg-white border border-slate-100 shadow-2xl rounded-3xl p-6 sm:p-8 space-y-6 text-center">
+        
+        <!-- BringMeHome Logo -->
+        <div class="flex items-center justify-center space-x-2 border-b border-slate-50 pb-4">
+            <svg class="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+            <span class="text-sm font-black text-primary font-heading">BringMe<span class="text-accent">Home</span></span>
+        </div>
+
+        <!-- Dynamic Automated Caretaker Notification Alert Banner -->
+        {% if notification_simulated %}
+            <div class="bg-hope/10 border border-hope/30 rounded-xl p-3.5 sm:p-4 flex items-start gap-3 sm:gap-4 text-left">
+                <div class="flex-shrink-0 mt-0.5">
+                    <svg class="h-10 w-10 sm:h-12 sm:w-12 text-hope" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h5 class="text-xs sm:text-sm font-bold text-hope-dark">Caretaker Alerted Instantly</h5>
+                    <p class="text-[10px] sm:text-xs text-slate-500 font-medium leading-normal mt-0.5 break-words">
+                        Your scan automatically sent a secure GPS/SMS alert notification to their registered family. Help is already on the way!
+                    </p>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Safe Minimal Information Container -->
+        <div class="space-y-4">
+            <!-- Profile Photo for visual verification in the field -->
+            <div class="h-44 w-44 rounded-full overflow-hidden border-4 border-slate-100 shadow-lg mx-auto">
+                {% if individual.photo %}
+                    <img src="{{ individual.photo.url }}" alt="Profile photo" class="h-full w-full object-cover">
+                {% else %}
+                    <div class="h-full w-full bg-slate-100 flex items-center justify-center text-slate-300">
+                        <span class="text-xs font-bold">No Portrait</span>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- First Name Only (Restricted exposure for high privacy security) -->
+            <div>
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">First Name Only</span>
+                <h2 class="text-3xl font-black text-primary tracking-tight">{{ first_name }}</h2>
+            </div>
+        </div>
+
+        <!-- SECTION: Crucial emergency medical notes if any -->
+        {% if individual.medical_notes %}
+            <div class="bg-red-50 border border-red-100 rounded-xl p-3 text-left max-w-full overflow-hidden">
+                <div class="flex items-start gap-2.5">
+                    <span class="inline-flex h-7 w-7 sm:h-8 sm:w-8 flex-shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600 text-xs">⚠️</span>
+                    <div class="flex-1 min-w-0">
+                        <span class="text-[8px] sm:text-[9px] font-black uppercase tracking-[0.18em] text-red-600 block">Urgent Medical Information</span>
+                        <p class="text-[9px] sm:text-[10px] font-semibold text-slate-700 leading-snug mt-0.5 break-words overflow-wrap-anywhere">
+                            {{ individual.medical_notes }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- SECTION: Instant Sighting Action Buttons -->
+        <div class="space-y-3.5 pt-2">
+            <!-- Primary Action Call Caretaker Button -->
+            <a href="tel:{{ individual.emergency_contact_phone }}" class="w-full inline-flex items-center justify-center px-6 py-4 border border-transparent rounded-2xl shadow-xl text-base font-extrabold text-white bg-primary hover:bg-slate-800 transition-colors" id="btn-call-emergency">
+                <svg class="h-5.5 w-5.5 mr-2.5 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+                Call Emergency Contact
+            </a>
+
+            <!-- Secondary Action Sighting Report Button -->
+            <a href="{% url 'incident_report_found' %}" class="w-full inline-flex items-center justify-center px-6 py-3 border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 bg-slate-50 hover:bg-slate-100 hover:border-slate-300 transition-colors" id="btn-report-location">
+                <svg class="h-4.5 w-4.5 mr-2 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Report Location Found
+            </a>
+        </div>
+
+        <!-- Help Info Footer -->
+        <p class="text-[9px] text-slate-400 font-medium max-w-[280px] mx-auto leading-normal">
+            Thank you for being an active, helpful guardian. Your location details are processed in accordance with strict community data regulations.
+        </p>
+
+    </div>
+</div>
+{% endblock %}

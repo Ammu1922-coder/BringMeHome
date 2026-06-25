@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Report Incident{% endblock %}
+
+{% block extra_css %}
+<style>
+  .map-container { height: 300px; border: 2px solid #22C55E; border-radius: 8px; }
+  .btn-primary { background-color: #22C55E; color: white; }
+  .btn-primary:hover { background-color: #1ea34c; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md">
+  <h2 class="text-2xl font-bold mb-4 text-center" style="color:#22C55E;">Citizen Incident Report</h2>
+  <form method="post" enctype="multipart/form-data" class="space-y-4">
+    {% csrf_token %}
+    <div>
+      {{ form.image.label_tag }}
+      {{ form.image }}
+    </div>
+    <div>
+      {{ form.description.label_tag }}
+      {{ form.description }}
+    </div>
+    <div>
+      {{ form.datetime.label_tag }}
+      {{ form.datetime }}
+    </div>
+    <div class="mb-2">
+      <label class="block font-medium mb-1" for="map">Select Location on Map</label>
+      <div id="map" class="map-container"></div>
+    </div>
+    {{ form.latitude }}
+    {{ form.longitude }}
+    <div>
+      {{ form.location_notes.label_tag }}
+      {{ form.location_notes }}
+    </div>
+    <button type="submit" class="w-full py-2 btn-primary rounded">Submit Report</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&callback=initMap" async defer></script>
+<script>
+  let map, marker;
+  function initMap() {
+    const defaultPos = { lat: 20.5937, lng: 78.9629 }; // India centre as fallback
+    map = new google.maps.Map(document.getElementById('map'), {
+      zoom: 5,
+      center: defaultPos,
+    });
+    map.addListener('click', (e) => {
+      placeMarker(e.latLng);
+    });
+  }
+  function placeMarker(location) {
+    if (marker) { marker.setPosition(location); }
+    else { marker = new google.maps.Marker({ position: location, map: map }); }
+    // Populate hidden fields
+    document.getElementById('id_latitude').value = location.lat();
+    document.getElementById('id_longitude').value = location.lng();
+  }
+</script>
+{% endblock %}

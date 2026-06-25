@@ -1,0 +1,561 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Family Dashboard | BringMeHome{% endblock %}
+
+{% block extra_css %}
+<style>
+  .profile-card {
+    transition: transform .2s, box-shadow .2s;
+  }
+
+  .profile-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  }
+
+  @keyframes pulse {
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: .5;
+    }
+  }
+
+  .animate-pulse-slow {
+    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+/* Avatar floating animation */
+@keyframes floatAvatar {
+  0% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-6px) rotate(1deg); }
+  100% { transform: translateY(0) rotate(0deg); }
+}
+#ai-avatar-btn {
+  animation: floatAvatar 3s ease-in-out infinite;
+}
+
+/* Tooltip subtle floating */
+@keyframes floatTooltip {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+  100% { transform: translateY(0); }
+}
+#hello-tooltip {
+  animation: floatTooltip 4s ease-in-out infinite;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+
+  <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+    <h1 class="text-3xl font-extrabold text-primary">Your Registered Profiles</h1>
+    <div class="flex flex-wrap gap-4">
+      <a href="{% url 'register_missing_person' %}"
+        class="inline-flex items-center px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-slate-800 transition shadow-lg">+
+        Register missing Person</a>
+      <a href="{% url 'safeguard_register' %}"
+        class="inline-flex items-center px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-slate-800 transition shadow-lg">+
+        Safeguard Loved One</a>
+    </div>
+  </div>
+
+  <!-- TAB NAV (below heading row, above cards) -->
+  <div class="mb-8">
+    <div class="flex flex-wrap gap-2 border-b border-slate-200" role="tablist" aria-label="Profile categories">
+      <button type="button" class="tab-btn px-4 py-3 text-sm font-bold text-blue-600 border-b-2 border-blue-600"
+        data-tab="secured" aria-controls="panel-secured" aria-selected="true">
+        🏡 Secured Profiles
+      </button>
+
+      <button type="button"
+        class="tab-btn px-4 py-3 text-sm font-bold text-slate-500 border-b-2 border-transparent hover:text-slate-700 hover:border-slate-300 transition"
+        data-tab="missing" aria-controls="panel-missing" aria-selected="false">
+        🚨 Active Missing Reports
+      </button>
+
+      <button type="button"
+        class="tab-btn px-4 py-3 text-sm font-bold text-slate-500 border-b-2 border-transparent hover:text-slate-700 hover:border-slate-300 transition"
+        data-tab="resolved" aria-controls="panel-resolved" aria-selected="false">
+        ✅ Resolved Cases
+      </button>
+    </div>
+  </div>
+
+  <!-- Panel A: Safe (Safeguard registered) -->
+  <div id="panel-secured" class="tab-panel" role="tabpanel" aria-labelledby="tab-secured">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for profile in profiles %}
+      {% if profile.status == 'Safe' or profile.status == 'safe' %}
+      <div class="profile-card bg-white rounded-2xl shadow-xl border-2 border-green-500 overflow-hidden">
+        <div class="bg-green-600 text-white font-black text-center text-xs py-2.5 uppercase tracking-widest">🛡️ SECURED
+          SAFEGUARD REGISTRY</div>
+        <div class="p-6 space-y-4">
+          {% if profile.photo %}
+          <img src="{{ profile.photo.url }}" alt="{{ profile.full_name }}"
+            class="w-full h-48 object-cover rounded-xl border border-green-200 shadow-sm">
+          {% else %}
+          <div
+            class="w-full h-48 bg-green-50 rounded-xl flex items-center justify-center text-green-500 text-xs font-bold border border-green-200 border-dashed">
+            No Photo Available</div>
+          {% endif %}
+          <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+            <h2 class="text-2xl font-black text-green-700 tracking-tight">{{ profile.full_name }}</h2>
+            <span class="text-sm font-bold text-slate-500">Age: {{ profile.age }}</span>
+          </div>
+          <div class="grid grid-cols-1 gap-2.5">
+            <div class="bg-green-50/60 border border-green-100/80 rounded-xl p-3 shadow-sm">
+              <span class="text-[9px] uppercase font-black tracking-widest text-green-600 block mb-0.5">Instructions for
+                Finders</span>
+              <span class="text-sm font-bold text-slate-800 break-words block">{{ individual.last_known_location|default:profile.last_known_location|default:"Not specified" }}</span>
+            </div>
+            <div class="bg-green-50/60 border border-green-100/80 rounded-xl p-3 shadow-sm">
+              <span class="text-[9px] uppercase font-black tracking-widest text-green-600 block mb-0.5">Date / Time
+                Registered</span>
+              <span class="text-sm font-bold text-slate-800 block">{{ profile.created_at|date:"Y-m-d H:i" }}</span>
+            </div>
+            <div class="bg-green-50/60 border border-green-100/80 rounded-xl p-3 shadow-sm">
+              <span class="text-[9px] uppercase font-black tracking-widest text-green-600 block mb-0.5">Primary
+                Emergency Contact</span>
+              <span class="text-sm font-black text-slate-800 block">{% if individual.emergency_contact_phone %}
+        {{ individual.emergency_contact_phone }} ({{ individual.emergency_contact_name }})
+      {% else %}
+        {{ profile.emergency_contact_phone }} ({{ profile.emergency_contact_name }})
+      {% endif %}</span>
+            </div>
+          </div>
+          {% if individual.medical_notes or profile.medical_notes %}
+          <div class="bg-amber-50 border border-amber-200 rounded-xl p-3.5 shadow-sm">
+            <h4 class="text-[9px] font-black uppercase tracking-[0.15em] text-amber-800 flex items-center mb-1">
+              <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3" />
+              </svg>
+              Medical Notes
+            </h4>
+            <p class="text-xs text-amber-950 leading-relaxed font-bold break-words">{{ profile.medical_notes }}</p>
+          </div>
+          {% endif %}
+          {% if profile.qr_code_image %}
+          {% endif %}
+          {% if request.user.is_staff and profile.address %}
+          <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-sm">
+            <span class="text-[9px] uppercase font-black text-slate-600 block mb-0.5">Residential Address
+              (Admin‑Only)</span>
+            <span class="text-sm text-slate-800 break-words">{{ profile.address }}</span>
+          </div>
+          {% endif %}
+          <div class="flex justify-between pt-2 border-t border-slate-100 space-x-2">
+            <a href="{% url 'digital_id_card' uuid=profile.id %}" target="_blank" class="inline-flex justify-center items-center px-5 py-2.5 rounded-lg font-bold text-sm bg-primary-light hover:bg-slate-800 text-white border border-slate-700/60 transition-all">
+                        Generate Id card
+            </a>
+                      <a href="{% url 'sighting_matches' uuid=profile.id %}"
+              class="flex-1 inline-flex items-center justify-center px-3 py-2 text-sm font-bold text-red-700 bg-white border border-red-200 rounded hover:bg-red-50 transition">
+              <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Matches
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+      {% empty %}
+      <div class="col-span-full bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-12 text-center">
+        <p class="text-slate-500 text-lg italic">You haven't registered any profiles yet.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Panel B: Missing -->
+  <div id="panel-missing" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-missing">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for profile in profiles %}
+      {% if profile.status == 'missing' or profile.status == 'Missing' %}
+      <div class="profile-card bg-white rounded-2xl shadow-xl border-2 border-red-500 overflow-hidden">
+        <div class="bg-red-600 text-white font-black text-center text-xs py-2.5 uppercase tracking-widest">🚨 CRITICAL:
+          ACTIVE EMERGENCY / REPORTED MISSING 🚨</div>
+        <div class="p-6 space-y-4">
+          {% if profile.photo %}
+          <img src="{{ profile.photo.url }}" alt="{{ profile.full_name }}"
+            class="w-full h-48 object-cover rounded-xl border border-red-200 shadow-sm">
+          {% else %}
+          <div
+            class="w-full h-48 bg-red-50 rounded-xl flex items-center justify-center text-red-500 text-xs font-bold border border-red-200 border-dashed">
+            No Photo Available</div>
+          {% endif %}
+          <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+            <h2 class="text-2xl font-black text-red-700 tracking-tight">{{ profile.full_name }}</h2>
+            <span class="text-sm font-bold text-slate-500">Age: {{ profile.age }}</span>
+          </div>
+          <div class="grid grid-cols-1 gap-2.5">
+            <div class="bg-red-50/60 border border-red-100/80 rounded-xl p-3 shadow-sm">
+              <span class="text-[9px] uppercase font-black tracking-widest text-red-600 block mb-0.5">Last Known
+                Location</span>
+              <span class="text-sm font-bold text-slate-800 break-words block">{{ individual.last_known_location|default:profile.last_known_location|default:"Not specified" }}</span>
+            </div>
+            <div class="bg-red-50/60 border border-red-100/80 rounded-xl p-3 shadow-sm">
+              <span class="text-[9px] uppercase font-black tracking-widest text-red-600 block mb-0.5">Date / Time
+                Disappeared</span>
+              <span class="text-sm font-bold text-slate-800 block">{{ profile.created_at|date:"Y-m-d H:i" }}</span>
+            </div>
+          </div>
+           {% if individual.medical_notes or profile.medical_notes %}
+          <div class="bg-amber-50 border border-amber-200 rounded-xl p-3.5 shadow-sm">
+            <h4 class="text-[9px] font-black uppercase tracking-[0.15em] text-amber-800 flex items-center mb-1">
+              <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3" />
+              </svg>
+              Medical Notes
+            </h4>
+            <p class="text-xs text-amber-950 leading-relaxed font-bold break-words">{{ profile.medical_notes }}</p>
+          </div>
+          {% endif %}
+          {% if profile.qr_code_image %}
+          {% endif %}
+          {% if request.user.is_staff and profile.address %}
+          </div>
+          <div class="bg-red-50/60 border border-red-100/80 rounded-xl p-3 shadow-sm">
+            <span class="text-[9px] uppercase font-black tracking-widest text-red-600 block mb-0.5">Primary Emergency
+              Contact</span>
+            <span class="text-sm font-bold text-slate-800 block">{% if individual.emergency_contact_phone %}
+        {{ individual.emergency_contact_phone }} ({{ individual.emergency_contact_name }})
+      {% else %}
+        {{ profile.emergency_contact_phone }} ({{ profile.emergency_contact_name }})
+      {% endif %}</span>
+          </div>
+          {% endif %}
+          <div class="flex justify-between pt-2 border-t border-slate-100 space-x-2">
+            <a href="{% url 'profile_detail' uuid=profile.id %}" target="_blank" class="flex-1 inline-flex items-center justify-center px-3 py-2 text-sm font-bold text-white bg-red-600 rounded hover:bg-red-700 transition">
+    <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+    </svg>
+    View More Details
+  </a>
+            <a href="{% url 'sighting_matches' uuid=profile.id %}"
+              class="flex-1 inline-flex items-center justify-center px-3 py-2 text-sm font-bold text-red-700 bg-white border border-red-200 rounded hover:bg-red-50 transition">
+              <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Matches
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+      {% empty %}
+      <div class="col-span-full bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-12 text-center">
+        <p class="text-slate-500 text-lg italic">No missing profiles found.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Panel C: Found -->
+  <div id="panel-resolved" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-resolved">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for profile in profiles %}
+      {% if profile.status == 'Found' or profile.status == 'found' %}
+      <div class="profile-card bg-white rounded-2xl shadow-xl border-2 border-green-500 overflow-hidden">
+        <div class="bg-green-600 text-white font-black text-center text-xs py-2.5 uppercase tracking-widest">✅ RESOLVED
+          CASE: FOUND & SAFE</div>
+
+        <div class="p-6 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+            <h2 class="text-2xl font-black text-green-700 tracking-tight">{{ profile.full_name }}</h2>
+            <span class="text-sm font-bold text-slate-500">Age: {{ profile.age }}</span>
+          </div>
+
+          <div class="bg-green-50/60 border border-green-100/80 rounded-xl p-4 shadow-sm">
+            <span class="text-[9px] uppercase font-black tracking-widest text-green-600 block mb-1">Resolved
+              Details</span>
+            <p class="text-sm font-bold text-slate-800 break-words">{{ profile.last_known_location|default:"Not
+              specified" }}</p>
+            <p class="text-xs text-slate-500 mt-2">Registered: {{ profile.created_at|date:"Y-m-d H:i" }}</p>
+          </div>
+
+          <div class="space-y-2 pt-2 border-t border-slate-100">
+            <a href="{% url 'digital_id_card' uuid=profile.id %}" target="_blank"
+              class="w-full inline-flex justify-center items-center px-4 py-2.5 bg-green-400 text-white hover:bg-green-500 transition rounded-xl text-sm font-black shadow-md">View
+              Digital ID Card</a>
+            <a href="{% url 'sighting_matches' uuid=profile.id %}"
+              class="w-full inline-flex justify-center items-center px-4 py-2.5 border border-green-200 text-green-700 bg-green-50 hover:bg-green-100 transition rounded-xl text-sm font-bold shadow-sm">View
+              Matches / Scans</a>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+      {% empty %}
+      <div class="col-span-full bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-12 text-center">
+        <p class="text-slate-500 text-lg italic">No resolved cases found.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div id="ai-chat-widget" class="fixed bottom-6 right-6 z-50">
+    <div id="hello-tooltip" class="absolute bottom-full right-0 mb-3 px-4 py-2 bg-white rounded-full text-sm font-semibold text-slate-800 shadow-lg border border-slate-200 whitespace-nowrap transition-opacity duration-300">
+      <span>Hello! 👋</span>
+      <div class="absolute -bottom-1 right-4 w-3 h-3 bg-white border border-slate-200 rounded-full transform rotate-45"></div>
+    </div>
+
+    <button 
+      id="ai-avatar-btn" 
+      onclick="toggleFloatingChat()" 
+      class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 shadow-2xl hover:shadow-3xl transform hover:scale-110 transition-all duration-300 flex items-center justify-center text-3xl relative group"
+      aria-label="Open AI Chat">
+      <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" stroke-width="2" opacity="0.3"/>
+        <path d="M50 20 L65 35 L50 50 L65 65 L50 80 L35 65 L50 50 L35 35 Z" fill="currentColor" opacity="0.9"/>
+        <circle cx="50" cy="50" r="12" fill="white" opacity="0.7"/>
+      </svg>
+    </button>
+
+    <div 
+      id="chat-panel" 
+      class="hidden absolute bottom-24 right-0 w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col max-h-96 transition-all duration-300 ease-in-out"
+      style="opacity: 0; transform: translateY(10px);">
+      
+      <div class="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-4 rounded-t-2xl flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-lg">🤖</div>
+          <div>
+            <h3 class="font-bold text-sm">AI Assistant</h3>
+            <p class="text-xs text-blue-100">Ready to help</p>
+          </div>
+        </div>
+        <button onclick="toggleFloatingChat()" class="text-white hover:bg-white/20 rounded-full p-1 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50">
+        <div class="text-center text-slate-500 text-sm py-4">
+          <p class="font-medium">Welcome! 👋</p>
+          <p class="text-xs">Ask me anything</p>
+        </div>
+      </div>
+
+      <div class="border-t border-slate-200 px-4 py-3 space-y-3 bg-white">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1 uppercase tracking-wide">Language</label>
+          <select id="floatingLanguageSelect" class="w-full bg-slate-100 text-slate-800 text-sm px-3 py-2 rounded-lg border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
+            <option value="English" data-code="en-IN">English</option>
+            <option value="Hindi" data-code="hi-IN">हिंदी (Hindi)</option>
+            <option value="Telugu" data-code="te-IN">తెలుగు (Telugu)</option>
+            <option value="Tamil" data-code="ta-IN">தமிழ் (Tamil)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="border-t border-slate-200 px-4 py-3 bg-white rounded-b-2xl flex gap-2">
+        <button onclick="toggleVoiceInput()" id="mic-btn" class="flex-shrink-0 w-10 h-10 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 flex items-center justify-center transition duration-200" title="Tap to record voice">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+            <path d="M17 16.91c-1.48 1.46-3.51 2.36-5.77 2.36-2.26 0-4.29-.9-5.77-2.36l-1.1 1.1c1.86 1.86 4.41 3 7.07 3 2.66 0 5.21-1.14 7.07-3l-1.1-1.1zM12 20c.55 0 1-.45 1-1v-3c0-.55-.45-1-1-1s-1 .45-1 1v3c0 .55.45 1 1 1z"/>
+          </svg>
+        </button>
+        <input type="text" id="floating-user-question" placeholder="Type or speak..." class="flex-1 bg-slate-100 text-slate-800 text-sm px-3 py-2 rounded-lg border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition" onkeypress="if(event.key==='Enter') submitFloatingQuestion()">
+        <button onclick="submitFloatingQuestion()" class="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center transition duration-200" title="Send message">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+
+  // ===== FLOATING AI CHAT WIDGET =====
+    let isVoiceRecording = false;
+    let lastVoiceReply = "";
+    let lastVoiceLangCode = "en-IN";
+    let currentSpeechUtterance = null;
+    let currentRecognition = null;
+
+    const langCodeMap = {
+        'English': 'en-US',
+        'Hindi': 'hi-IN',
+        'Telugu': 'te-IN',
+        'Tamil': 'ta-IN'
+    };
+
+    function toggleFloatingChat() {
+        const chatPanel = document.getElementById('chat-panel');
+        const tooltip = document.getElementById('hello-tooltip');
+        const isHidden = chatPanel.classList.contains('hidden');
+
+        if (isHidden) {
+            chatPanel.classList.remove('hidden');
+            setTimeout(() => {
+                chatPanel.style.opacity = '1';
+                chatPanel.style.transform = 'translateY(0)';
+            }, 10);
+            tooltip.style.opacity = '0';
+            tooltip.style.pointerEvents = 'none';
+        } else {
+            chatPanel.style.opacity = '0';
+            chatPanel.style.transform = 'translateY(10px)';
+            setTimeout(() => {
+                chatPanel.classList.add('hidden');
+            }, 300);
+            tooltip.style.opacity = '1';
+            tooltip.style.pointerEvents = 'auto';
+        }
+    }
+
+    async function submitFloatingQuestion() {
+        const input = document.getElementById('floating-user-question');
+        const question = input.value.trim();
+
+        if (!question) return;
+
+        addChatMessage(question, 'user');
+        input.value = '';
+
+        await fetchAIResponse(question);
+    }
+
+    async function fetchAIResponse(question) {
+        const langSelect = document.getElementById('floatingLanguageSelect');
+        const selectedLang = langSelect.value;
+        const langCode = langSelect.options[langSelect.selectedIndex].getAttribute('data-code') || 'en-IN';
+
+        try {
+            addChatMessage('🤖 Thinking...', 'ai-thinking');
+
+            const res = await fetch('{% url "gemini_chat" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    question: question,
+                    language: selectedLang
+                }),
+            });
+
+            const data = await res.json();
+            const reply = data.reply || data.error || 'Sorry, I could not process that. Please try again.';
+
+            removeChatMessage('ai-thinking');
+            addChatMessage(reply, 'ai');
+            lastVoiceReply = reply;
+            lastVoiceLangCode = langCode;
+
+            speakMessage(reply, langCode);
+
+        } catch (err) {
+            removeChatMessage('ai-thinking');
+            addChatMessage('⚠️ Error: Connection failed. Please check your internet.', 'ai');
+        }
+    }
+
+    function addChatMessage(text, sender) {
+        const messagesContainer = document.getElementById('chat-messages');
+        const welcomeMsg = messagesContainer.querySelector('.text-center.text-slate-500');
+        if (welcomeMsg && sender !== 'ai-thinking') {
+            welcomeMsg.remove();
+        }
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `flex gap-2 ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
+        if (sender === 'ai-thinking') messageDiv.id = 'ai-thinking-msg';
+
+        const bubble = document.createElement('div');
+        if (sender === 'user') {
+            bubble.className = 'max-w-xs bg-blue-500 text-white rounded-2xl rounded-tr-sm px-4 py-2 text-sm shadow-md';
+        } else if (sender === 'ai-thinking') {
+            bubble.className = 'max-w-xs bg-slate-200 text-slate-700 rounded-2xl rounded-tl-sm px-4 py-2 text-sm animate-pulse';
+        } else {
+            bubble.className = 'max-w-xs bg-slate-100 text-slate-800 rounded-2xl rounded-tl-sm px-4 py-2 text-sm shadow-sm';
+        }
+        bubble.textContent = text;
+        messageDiv.appendChild(bubble);
+        messagesContainer.appendChild(messageDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function removeChatMessage(messageId) {
+        const msg = document.getElementById(messageId + '-msg');
+        if (msg) msg.remove();
+    }
+
+    function speakMessage(text, langCode) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = langCode;
+
+        const langSettings = {
+            'en-IN': { rate: 0.9, pitch: 1.0, volume: 1.0 },
+            'hi-IN': { rate: 0.8, pitch: 1.1, volume: 1.0 },
+            'te-IN': { rate: 0.8, pitch: 1.0, volume: 1.0 },
+            'ta-IN': { rate: 0.8, pitch: 1.05, volume: 1.0 }
+        };
+
+        const settings = langSettings[langCode] || { rate: 0.85, pitch: 1.0, volume: 1.0 };
+        utterance.rate = settings.rate;
+        utterance.pitch = settings.pitch;
+        utterance.volume = settings.volume;
+
+        window.speechSynthesis.speak(utterance);
+    }
+
+
+  (function () {
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+
+    function setActive(tabKey) {
+      tabPanels.forEach(panel => {
+        const isTarget = panel.id === 'panel-' + tabKey;
+        panel.classList.toggle('hidden', !isTarget);
+      });
+
+      tabButtons.forEach(btn => {
+        const active = btn.dataset.tab === tabKey;
+        if (active) {
+          btn.classList.add('text-blue-600', 'border-blue-600');
+          btn.classList.remove('text-slate-500', 'border-transparent');
+        } else {
+          btn.classList.add('text-slate-500', 'border-transparent');
+          btn.classList.remove('text-blue-600', 'border-blue-600');
+        }
+        btn.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+    }
+
+    tabButtons.forEach(btn => btn.addEventListener('click', () => setActive(btn.dataset.tab)));
+    setActive('secured');
+  })();
+
+  // Added Missing Share Link Function
+function copyShareLink(profileId) {
+        const fakeUrl = window.location.origin + '/profile/public/' + profileId + '/';
+        navigator.clipboard.writeText(fakeUrl).then(() => {
+            alert('Public share link copied to clipboard!');
+        }).catch(err => {
+            console.error('Could not copy text: ', err);
+        });
+    }
+
+    // Dummy fallback for voice toggle if not implemented elsewhere
+    function toggleVoiceInput() {
+        alert('Voice recognition feature initialization...');
+    }
+
+</script>
+{% endblock %}

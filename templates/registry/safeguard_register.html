@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Create Safety Profile - BringMeHome{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-12">
+    <div class="text-center mb-10">
+        <span class="inline-flex items-center justify-center p-3 rounded-full bg-green-50 text-green-600 mb-4 shadow-sm border border-green-100">
+            <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+        </span>
+        <h1 class="text-3xl font-black text-primary tracking-tight">Create Safety Profile</h1>
+        <p class="mt-2 text-sm text-slate-600 max-w-md mx-auto">
+            Ensure your loved one can be identified quickly if they ever wander. This information will be embedded in their secure Digital ID Card.
+        </p>
+    </div>
+
+    <div class="bg-primary/5 border border-primary/20 rounded-xl p-5 mb-8 flex items-start space-x-3.5 shadow-sm">
+        <svg class="h-6 w-6 text-primary flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+        <div>
+            <h4 class="text-sm font-bold text-primary">Privacy & Security Shield Active</h4>
+            <p class="text-xs text-slate-600 mt-0.5 leading-relaxed">
+                Home addresses and private details are strictly shielded. Scanning the Digital ID Card will **never** display your address. It only shows your contact info and instructions for the finder.
+            </p>
+        </div>
+    </div>
+
+    <form action="{% url 'safeguard_register' %}" method="POST" enctype="multipart/form-data" class="bg-white shadow-xl border border-slate-100 rounded-2xl p-6 sm:p-10 space-y-8" onsubmit="return validateRegistrationForm()">
+        {% csrf_token %}
+
+        {% if form.errors %}
+            <div class="p-4 mb-4 rounded-lg border border-red-200 bg-red-50 text-sm text-red-700">
+                <strong>Form debugging:</strong> {{ form.errors }}
+            </div>
+        {% endif %}
+
+        {% if messages %}
+            <div class="space-y-2">
+                {% for message in messages %}
+                    <div class="p-3 text-sm rounded-lg {% if message.tags == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-green-50 text-green-700 border border-green-200{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div>
+            <h3 class="text-lg font-bold text-primary border-b border-slate-100 pb-2 mb-4 flex items-center">
+                <span class="h-6 w-1 bg-accent rounded-full mr-2"></span>
+                Loved One's Information
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <div class="sm:col-span-2">
+                    <label for="id_full_name" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Full Name <span class="text-red-500">*</span></label>
+                    {{ form.full_name }}
+                </div>
+                <div>
+                    <label for="id_age" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Age <span class="text-red-500">*</span></label>
+                    {{ form.age }}
+                </div>
+                <div class="sm:col-span-3">
+                    <label for="id_photo" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Current Photo <span class="text-red-500">*</span></label>
+                    <div class="border-2 border-dashed border-slate-200 hover:border-accent rounded-xl p-6 transition-all bg-slate-50/50 flex flex-col items-center justify-center text-center">
+                        {{ form.photo }}
+                        <p class="text-[10px] text-slate-400 mt-1.5">Use a clear, recent photo showing their face clearly.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-lg font-bold text-primary border-b border-slate-100 pb-2 mb-4 flex items-center">
+                <span class="h-6 w-1 bg-accent rounded-full mr-2"></span>
+                Primary Emergency Contact
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                    <label for="id_emergency_contact_name" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Contact Name <span class="text-red-500">*</span></label>
+                    {{ form.emergency_contact_name }}
+                    <span id="err-emergency-name" class="text-[11px] text-red-500 hidden font-semibold mt-1">Please enter a contact name.</span>
+                </div>
+                <div>
+                    <label for="id_emergency_contact_phone" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Contact Phone <span class="text-red-500">*</span></label>
+                    {{ form.emergency_contact_phone }}
+                    <span id="err-emergency-phone" class="text-[11px] text-red-500 hidden font-semibold mt-1">Please enter a valid phone number.</span>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-lg font-bold text-primary border-b border-slate-100 pb-2 mb-4 flex items-center">
+                <span class="h-6 w-1 bg-accent rounded-full mr-2"></span>
+                Behavioral & Care Needs
+            </h3>
+            <div class="space-y-6">
+                <div>
+                    <label for="id_medical_notes" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Sensory or Communication Needs</label>
+                    {{ form.medical_notes }}
+                    <p class="text-[10px] text-slate-400 mt-1">💬 Mention if they are non-verbal, sensitive to loud noises, or afraid of strangers.</p>
+                </div>
+                <div>
+                    <label for="id_last_known_location" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Instructions for Finders</label>
+                    {{ form.last_known_location }}
+                    <p class="text-[10px] text-slate-400 mt-1">📢 These instructions help a citizen keep your loved one calm until you arrive.</p>
+                </div>
+                <div class="opacity-75">
+                    <label for="id_address" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Residential Home Address (Admin Only)</label>
+                    {{ form.address }}
+                </div>
+            </div>
+        </div>
+
+        <div class="border-t border-slate-100 pt-6 flex flex-col sm:flex-row gap-4 justify-end">
+            <a href="{% url 'family_dashboard' %}" class="inline-flex justify-center items-center px-5 py-3 border border-slate-200 text-sm font-semibold rounded-lg text-slate-700 bg-white hover:bg-slate-50 transition-colors">
+                Cancel
+            </a>
+            <button type="submit" class="inline-flex justify-center items-center px-6 py-3 border border-transparent text-sm font-bold rounded-lg shadow-lg text-white bg-primary hover:bg-primary-light transition-all">
+                <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                Generate Digital ID Card
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    function validateRegistrationForm() {
+        var isValid = true;
+        var name = document.getElementById("id_emergency_contact_name");
+        var phone = document.getElementById("id_emergency_contact_phone");
+        
+        if (!name.value.trim()) {
+            document.getElementById("err-emergency-name").classList.remove("hidden");
+            name.classList.add("border-red-500");
+            isValid = false;
+        }
+        
+        if (phone.value.trim().length < 7) {
+            document.getElementById("err-emergency-phone").classList.remove("hidden");
+            phone.classList.add("border-red-500");
+            isValid = false;
+        }
+
+        return isValid;
+    }
+</script>
+{% endblock %}

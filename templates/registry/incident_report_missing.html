@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Register Missing Person (Emergency) - BringMeHome{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-12">
+    <div class="text-center mb-10">
+        <span
+            class="inline-flex items-center justify-center p-3 rounded-full bg-red-50 text-red-600 mb-4 shadow-sm border border-red-100 animate-pulse">
+            <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            </svg>
+        </span>
+        <h1 class="text-3xl font-black text-red-700 tracking-tight">Report a Missing Person</h1>
+        <p class="mt-2 text-sm text-slate-600 max-w-xl mx-auto">
+            Describe the last time you saw them, where they were, and any strong identifiers. This will instantly
+            activate an emergency search profile on your dashboard and enable AI photo matching.
+        </p>
+    </div>
+
+    <div class="bg-red-50 border border-red-200 rounded-xl p-5 mb-8 flex items-start space-x-3.5 shadow-sm">
+        <svg class="h-6 w-6 text-red-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <div>
+            <h4 class="text-sm font-bold text-red-800">Emergency Sighting Match Active</h4>
+            <p class="text-xs text-red-700 mt-0.5 leading-relaxed">
+                By submitting this form, you are marking this individual as **Missing**. The platform will actively
+                monitor public sightings, citizen reports, and AI photo matches.
+            </p>
+        </div>
+    </div>
+
+    <form action="{% url 'register_missing_person' %}" method="POST" enctype="multipart/form-data"
+        class="bg-white shadow-xl border border-slate-100 rounded-2xl p-6 sm:p-10 space-y-8">
+        {% csrf_token %}
+
+        {% if form.errors %}
+        <div class="p-4 rounded-lg border border-red-200 bg-red-50 text-sm text-red-700">
+            <strong>Please correct the following errors:</strong>
+            {{ form.errors }}
+        </div>
+        {% endif %}
+
+        {% if messages %}
+        <div class="space-y-2">
+            {% for message in messages %}
+            <div
+                class="p-3 text-sm rounded-lg {% if message.tags == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-green-50 text-green-700 border border-green-200{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="p-4 bg-amber-50 border border-amber-100 rounded-xl">
+            <p class="text-sm font-semibold text-amber-800">Missing-person tips</p>
+            <ul class="text-xs text-amber-700 mt-2 space-y-1 list-disc pl-4">
+                <li>Last seen time + exact location/landmarks</li>
+                <li>Clothing/ID or unique identifiers (bracelet, bag, wheelchair, etc.)</li>
+                <li>Medical risk: dementia, allergies, medication needs</li>
+            </ul>
+        </div>
+
+        <div class="space-y-6">
+            <div>
+                <label for="id_image"
+                    class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Photo of the person
+                    or scene</label>
+                {{ form.image }}
+            </div>
+
+            <div>
+                <label for="id_description"
+                    class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Description (what you
+                    noticed)</label>
+                {{ form.description }}
+            </div>
+
+            <div>
+                <label for="missing_severity"
+                    class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Urgency
+                    level</label>
+                <select id="missing_severity" name="missing_severity"
+                    class="w-full bg-slate-100 text-slate-800 text-sm px-3 py-2 rounded-lg border border-slate-300 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition">
+                    <option value="low" selected>Low / Not sure</option>
+                    <option value="medium">Medium concern</option>
+                    <option value="high">High risk (medical / danger)</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="id_datetime"
+                    class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">When did this
+                    happen?</label>
+                {{ form.datetime }}
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Pick the location
+                    on the map</label>
+                <div id="map" class="w-full rounded-xl border border-slate-200" style="height:320px;"></div>
+                <p class="text-[10px] text-slate-400 mt-1">Click on the map to place the incident location.</p>
+            </div>
+
+            {{ form.latitude }}
+            {{ form.longitude }}
+
+            <div>
+                <label for="id_location_notes"
+                    class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Location
+                    notes</label>
+                {{ form.location_notes }}
+            </div>
+        </div>
+
+        <div class="border-t border-slate-100 pt-6 flex flex-col sm:flex-row gap-4 justify-end">
+            <a href="{% url 'family_dashboard' %}"
+                class="inline-flex justify-center items-center px-5 py-3 border border-slate-200 text-sm font-semibold rounded-lg text-slate-700 bg-white hover:bg-slate-50 transition-colors">Cancel</a>
+            <button type="submit"
+                class="inline-flex justify-center items-center px-6 py-3 border border-transparent text-sm font-bold rounded-lg shadow-lg text-white bg-red-600 hover:bg-red-700 transition-all">Submit
+                Missing Report</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function initMap() {
+        try {
+            if (!window.google || !google.maps) {
+                console.warn('Google Maps JS not loaded (check GOOGLE_MAPS_API_KEY).');
+                return;
+            }
+
+            let map, marker;
+            const defaultPos = { lat: 20.5937, lng: 78.9629 };
+            map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 5,
+                center: defaultPos,
+                mapTypeControl: false,
+            });
+
+            map.addListener('click', (event) => {
+                if (!marker) {
+                    marker = new google.maps.Marker({ position: event.latLng, map: map });
+                } else {
+                    marker.setPosition(event.latLng);
+                }
+                // Safely map values to Django fields, falls back cleanly if fields missing
+                const latInput = document.getElementById('id_latitude');
+                const lngInput = document.getElementById('id_longitude');
+                if (latInput) latInput.value = event.latLng.lat().toFixed(6);
+                if (lngInput) lngInput.value = event.latLng.lng().toFixed(6);
+            });
+        } catch (e) {
+            console.error('initMap failed:', e);
+        }
+    }
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&callback=initMap" async
+    defer></script>
+{% endblock %}
