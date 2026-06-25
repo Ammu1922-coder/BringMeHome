@@ -248,10 +248,12 @@ Version 1.0
 Added Gemini Vision matching pipeline
 Implemented AI confidence scoring
 Improved image handling process<br>
+
 2026-06-24
 Added dashboard improvements
 Enhanced report validation
 Fixed matching workflow bugs<br>
+
 2026-06-25
 Added geolocation groundwork
 Improved registration forms
