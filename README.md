@@ -1,4 +1,4 @@
-🏠 BringMeHome – AI-Powered Missing Person Registry & Sighting Tracker
+🏠 <b>BringMeHome – AI-Powered Missing Person Registry & Sighting Tracker
 
 Using AI and community collaboration to help reunite missing individuals with their families.
 
@@ -179,20 +179,32 @@ BringMeHome/
 
 📷 Screenshots
 
-📝 signup and login 
-![signup Portal](screenshots/sign up.png)
-![Login Portal](screenshots/login.png)
+📝 signup and login<br> 
+<br><img src="screenshots/login.png" width="300" height="300">
+<br><img src="screenshots/signup.png" width="300" height="300">
 
-📝 Vulnerable Individual Registration
 
-![Login Portal](screenshots/.png)
+📝 Home page<br>
+<br><img src="screenshots/home.png" width="300" height="300">
 
-📢 Report Found Sighting
 
-(Add Screenshot)
+📝 dashboard <br>
+<br><img src="screenshots/dashboard.png" width="300" height="300">
+
+
+📝 Vulnerable Individual Registration<br>
+<br><img src="screenshots/Missing person registry.png" width="300" height="300">
+<br><img src="screenshots/registry2.png" width="300" height="300">
+
+
+📢 Report Found Sighting<br>
+<br><img src="screenshots/reportFound form.png" width="300" height="300">)
+
+
+📝 safegaurd registration<br>
+<br><img src="screenshots/safegaurd registry.png" width="300" height="300">
 
 🤖 AI Match Dashboard
-
 (Add Screenshot)
 
 🚀 Future Enhancements
@@ -232,18 +244,23 @@ Version 1.0
 ✅ Fallback Matching Engine
 
 📝 Daily Updates
-2026-06-26
+
+
+2026-06-23
 Added Gemini Vision matching pipeline
 Implemented AI confidence scoring
-Improved image handling process
-2026-06-27
+Improved image handling process<br>
+
+2026-06-24
 Added dashboard improvements
 Enhanced report validation
-Fixed matching workflow bugs
-2026-06-28
+Fixed matching workflow bugs<br>
+
+2026-06-25
 Added geolocation groundwork
 Improved registration forms
-Optimized AI response handling
+Optimized AI response handling<br>
+
 ❤️ Social Impact
 
 BringMeHome is more than a technical project.
