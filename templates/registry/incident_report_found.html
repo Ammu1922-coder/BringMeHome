@@ -17,8 +17,15 @@
   <h2 class="text-2xl font-bold mb-2 text-center" style="color:#22C55E;">Citizen Incident Report: Found</h2>
   <p class="text-sm text-slate-600 text-center mb-6">Report where you found the person and any condition/safety details.</p>
 
-  <form method="post" enctype="multipart/form-data" class="space-y-4">
+<form method="post" enctype="multipart/form-data" class="space-y-4">
     {% csrf_token %}
+
+    {% if form.errors %}
+      <div class="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg">
+        <strong>Please fix the following errors:</strong>
+        {{ form.errors }}
+      </div>
+    {% endif %}
 
     <div class="p-4 bg-slate-50 rounded-lg info-banner">
       <p class="text-sm text-slate-700 font-semibold">Found-person tips</p>
@@ -29,8 +36,12 @@
     </div>
 
     <div>
-      {{ form.image.label_tag }}
-      {{ form.image }}
+      <label for="id_uploaded_image" class="block text-sm font-medium text-slate-700 mb-1">Upload Sighting Photo</label>
+      {% if form.uploaded_image %}
+        {{ form.uploaded_image }}
+      {% else %}
+        {{ form.image }}
+      {% endif %}
     </div>
 
     <div>
@@ -67,6 +78,7 @@
 
     <button type="submit" class="w-full py-2 btn-primary rounded">Submit Found Report</button>
   </form>
+
 </div>
 {% endblock %}
 

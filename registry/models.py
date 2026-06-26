@@ -115,7 +115,7 @@ class IncidentReport(models.Model):
 
     def __str__(self):
         reporter_name = self.reporter.username if self.reporter else "Anonymous"
-        return f"Report {self.id[:8]} by {reporter_name} at {self.timestamp.strftime('%Y-%m-%d %H:%M')}"
+        return f"Report {str(self.id)[:8]} by {reporter_name} at {self.timestamp.strftime('%Y-%m-%d %H:%M')}"
 class PotentialMatch(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     incident_report = models.ForeignKey(
@@ -135,3 +135,14 @@ class PotentialMatch(models.Model):
 
     def __str__(self):
         return f"Match {self.vulnerable_individual.full_name} ({self.confidence:.1f}%) for report {self.incident_report.id[:8]}"
+
+class GeminMatchCache(models.Model):
+    profile = models.ForeignKey(VulnerableIndividual, on_delete=models.CASCADE)
+    report = models.ForeignKey(IncidentReport, on_delete=models.CASCADE)
+    confidence = models.FloatField()
+    reason = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('profile', 'report')
+
