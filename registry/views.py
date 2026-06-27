@@ -17,6 +17,7 @@ from django.conf import settings
 from django.db import transaction
 
 
+
 # Setup unified client globally using the correct setting name
 client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
@@ -69,6 +70,9 @@ def digital_id_card(request, uuid):
     individual = get_object_or_404(VulnerableIndividual, id=uuid)
     return render(request, 'registry/id_card.html', {'individual': individual})
 
+def generate_poster(request, uuid):
+    individual = get_object_or_404(VulnerableIndividual, id=uuid)
+    return render(request, 'registry/poster.html', {'individual': individual})
 
 def public_scan(request, uuid):
     individual = get_object_or_404(VulnerableIndividual, id=uuid)
@@ -167,7 +171,7 @@ def found_alerts(request):
     to prevent API rate limits, falling back gracefully to text heuristics.
     """
     family_profiles = VulnerableIndividual.objects.filter(
-        status__in=['missing', 'Missing', 'active', 'Active', 'Found', 'found']
+        status__in=['missing', 'Missing', 'active', 'Active',]
     )
     
     recent_reports = IncidentReport.objects.filter(
@@ -291,36 +295,54 @@ def found_alerts(request):
         seen_profiles.add(pid)
         deduped.append(m)
 
-    with transaction.atomic():
-        for m in deduped:
-            profile = m.get('profile')
-            if not profile:
-                continue
-            current = str(getattr(profile, 'status', '')).lower()
-            if current in {'missing', 'active'}:
-                profile.status = 'Found'
-                profile.save(update_fields=['status'])
 
-    context = {'matches': deduped}
-    return render(request, 'registry/found_alerts.html', context)
+        with transaction.atomic():
+            for m in deduped:
+                profile = m.get('profile')
+                report = m.get('report')
+                confidence_score = m.get('confidence', 0)
+                
+                if not profile or not report:
+                    continue
+                
+                current_status = str(getattr(profile, 'status', '')).lower()
+                
+                # STAGE GATE 1: Only touch profiles that are actively missing
+                if current_status in {'missing', 'active'}:
+                    
+                    # STAGE GATE 2: STRIKT CHECK - Only resolve if match is >= 50%
+                    if confidence_score >= 50.0:
+                        profile.status = 'Found'
+                        
+                        # Fix the address bug: update last_known_location with where they were found
+                        if report.location_found:
+                            profile.last_known_location = report.location_found
+                        elif report.description:
+                            # Fallback to description text if location notes are blank
+                            profile.last_known_location = report.description[:100]
+                        
+                        profile.save(update_fields=['status', 'last_known_location'])
+                else:
+                    # If match score is below 50% (like the 14% match), DO NOT TOUCH STATUS.
+                    # It will safely stay in the Active Missing tab!
+                    continue
 
 
-@login_required
-def delete_profile(request, uuid):
-    if request.method != 'POST':
-        return HttpResponseBadRequest('POST required')
-    individual = get_object_or_404(VulnerableIndividual, id=uuid, creator=request.user)
-    individual.delete()
-    messages.success(request, 'Profile deleted successfully.')
-    return redirect('family_dashboard')
+
+
+
+
 
 
 @login_required
 def report_missing(request, uuid):
     if request.method != 'POST':
         return HttpResponseBadRequest('POST required')
+    
+    # SAFE LOOKUP: Replaces any risky [0] or direct indexes
     individual = get_object_or_404(VulnerableIndividual, id=uuid, creator=request.user)
-    individual.status = 'missing'
+    
+    individual.status = 'Missing'
     individual.save()
     messages.warning(request, f"CRITICAL: {individual.full_name} has been reported missing!")
     return redirect('family_dashboard')
@@ -330,25 +352,30 @@ def report_missing(request, uuid):
 def report_safe(request, uuid):
     if request.method != 'POST':
         return HttpResponseBadRequest('POST required')
+    
+    # SAFE LOOKUP: Replaces any risky [0] or direct indexes
     individual = get_object_or_404(VulnerableIndividual, id=uuid, creator=request.user)
+    
     individual.status = 'Safe'
     individual.save()
     messages.success(request, f"Wonderful news! {individual.full_name} has been marked safe.")
     return redirect('family_dashboard')
-
 
 @login_required
 def sighting_matches(request, uuid):
     threshold = 50
     individual = get_object_or_404(VulnerableIndividual, id=uuid, creator=request.user)
 
-    if str(individual.status) not in ('missing', 'Missing', 'active', 'Active'):
+    # If the individual isn't marked as missing, return empty lists immediately
+    if str(individual.status) not in ('missing', 'Missing', 'active', 'Active', 'resolved', 'Resolved'):
         return render(request, 'registry/sighting_matches.html', {
             'individual': individual,
             'matches': [],
+            'all_reports': [],
             'threshold': threshold,
         })
 
+    # Pull the 25 most recent public 'found' reports to scan against
     found_reports = IncidentReport.objects.filter(
         report_type='found',
     ).order_by('-timestamp')[:25]
@@ -367,10 +394,12 @@ def sighting_matches(request, uuid):
         return render(request, 'registry/sighting_matches.html', {
             'individual': individual,
             'matches': [],
+            'all_reports': [],
             'threshold': threshold,
         })
 
-    matches = []
+    high_matches = []
+    all_processed_reports = []
     seen = set()
 
     if settings.GEMINI_API_KEY:
@@ -399,24 +428,34 @@ def sighting_matches(request, uuid):
                 score_match = re.search(r'(100|[1-9]?\d)\s*%?', text)
                 score = float(score_match.group(1)) if score_match else 0.0
 
-                if score < threshold:
-                    continue
-
-                matches.append({
+                # Build the item payload dictionary
+                match_item = {
                     'profile': individual,
                     'report': report,
                     'confidence': score,
-                    'reason': f"Gemini similarity score passed threshold ({threshold}%).",
-                })
+                    'reason': f"Gemini similarity score evaluated at {score}%.",
+                }
+
+                # Save EVERYTHING to the all_reports list for the secondary timeline matrix
+                all_processed_reports.append(match_item)
+
+                # Save ONLY high confidence items to the primary highlights stack
+                if score >= threshold:
+                    high_matches.append(match_item)
+
             except Exception:
                 continue
 
-    matches = sorted(matches, key=lambda m: m.get('confidence', 0), reverse=True)
-    matches = matches[:1]
+    # Sort high confidence matches from best to worst (No slicing so you see multiple matches!)
+    high_matches = sorted(high_matches, key=lambda m: m.get('confidence', 0), reverse=True)
+    
+    # Sort the complete list by newest reports first
+    all_processed_reports = sorted(all_processed_reports, key=lambda m: m['report'].timestamp, reverse=True)
 
     return render(request, 'registry/sighting_matches.html', {
         'individual': individual,
-        'matches': matches,
+        'matches': high_matches,                 # Feeds top comparison panel
+        'all_reports': all_processed_reports,    # Feeds bottom timeline matrix
         'threshold': threshold,
     })
 
@@ -427,12 +466,21 @@ def incident_success(request):
 
 
 @login_required
-def family_dashboard(request):
-    """Render the central dashboard showcasing all tracked individuals."""
-    # FIX: Uses your actual 'registry/dashboard.html' filename template routing string
-    individuals = VulnerableIndividual.objects.filter(creator=request.user)
-    return render(request, 'registry/dashboard.html', {'individuals': individuals})
+def delete_profile(request, uuid):
+    """Delete a profile and redirect back to the dashboard.
+    Only the creator of the profile can delete it.
+    """
+    profile = get_object_or_404(VulnerableIndividual, id=uuid, creator=request.user)
+    # Perform deletion
+    profile.delete()
+    return redirect('family_dashboard')
 
+@login_required
+def family_dashboard(request):
+    """Render the central dashboard showcasing all tracked individuals uniquely."""
+    # This retrieves all profiles for the user as a clean list, avoiding IndexError entirely!
+    individuals = VulnerableIndividual.objects.filter(creator=request.user).distinct()
+    return render(request, 'registry/dashboard.html', {'individuals': individuals})
 
 @login_required
 def gemini_chat(request):
@@ -451,3 +499,7 @@ def gemini_chat(request):
         except Exception as chat_err:
             return JsonResponse({'error': str(chat_err)}, status=500)
     return render(request, 'registry/gemini_chat.html')
+
+def generate_poster(request, uuid):
+    individual = get_object_or_404(VulnerableIndividual, id=uuid)
+    return render(request, 'registry/poster.html', {'individual': individual})

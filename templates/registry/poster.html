@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emergency Poster - {{ individual.full_name }}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @media print {
+      body { background: white; color: black; }
+      .no-print { display: none; }
+      .print-border { border: 3px solid #dc2626 !important; }
+    }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen py-10 font-sans">
+
+  <!-- Print Assistant Header Bar (Hidden during actual printing) -->
+  <div class="no-print max-w-2xl mx-auto mb-6 bg-white p-4 rounded-xl shadow-md flex justify-between items-center border border-slate-200">
+    <div>
+      <h1 class="text-lg font-black text-slate-800">Poster Print Assistant</h1>
+      <p class="text-xs text-slate-500">Prints a standard window-sized emergency flyer.</p>
+    </div>
+    <button onclick="window.print();" class="bg-red-600 hover:bg-red-700 text-white font-bold px-5 py-2.5 rounded-xl shadow transition flex items-center gap-2">
+      🖨️ Print Poster
+    </button>
+  </div>
+
+  <!-- MAIN POSTER CONTAINER -->
+  <div class="print-border max-w-lg mx-auto bg-white border-[6px] border-red-600 rounded-2xl shadow-2xl p-8 space-y-6 relative bg-white">
+    
+    <!-- CRITICAL HEADER BANNER -->
+    <div class="bg-red-600 text-white text-center py-4 rounded-xl">
+      <h1 class="text-4xl font-extrabold tracking-tighter uppercase">MISSING</h1>
+      <p class="text-xs font-bold tracking-widest uppercase mt-1 opacity-90">Please Help Us Find Them</p>
+    </div>
+
+    <!-- MAIN PROFILE IMAGE -->
+    <div class="flex justify-center">
+      {% if individual.photo %}
+        <img src="{{ individual.photo.url }}" alt="{{ individual.full_name }}" class="w-72 h-72 object-cover rounded-2xl border-4 border-slate-100 shadow-md">
+      {% else %}
+        <div class="w-56 h-56 bg-slate-100 rounded-2xl border-4 border-dashed border-slate-300 flex items-center justify-center text-slate-400 font-bold">No Photo Available</div>
+      {% endif %}
+    </div>
+
+    <!-- NAME & AGE DETAILS -->
+    <div class="text-center space-y-1">
+      <h2 class="text-3xl font-black text-slate-900 uppercase tracking-tight">{{ individual.full_name }}</h2>
+      <p class="text-lg font-bold text-slate-600">Age: {{ individual.age }}</p>
+    </div>
+
+    <!-- CRITICAL CASE DETAILS FIELD DETAILS -->
+    <div class="grid grid-cols-1 gap-3 bg-slate-50 p-5 rounded-2xl border border-slate-100">
+      <div>
+        <span class="text-[9px] font-black uppercase tracking-wider text-red-600 block">Last Known Location / Areas Frequented</span>
+        <span class="text-xs font-bold text-slate-800">{{ individual.last_known_location|default:"Not specified" }}</span>
+      </div>
+      
+      {% if individual.medical_notes %}
+      <div class="border-t border-slate-200/60 pt-2.5">
+        <span class="text-[9px] font-black uppercase tracking-wider text-amber-600 block">Critical Medical Vulnerabilities</span>
+        <span class="text-xs font-bold text-amber-950 block leading-relaxed">{{ individual.medical_notes }}</span>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- EMERGENCY CONTACT & QR CONTAINER -->
+    <div class="flex items-center justify-between border-t-2 border-dashed border-slate-200 pt-6 gap-6">
+      <div class="space-y-2 flex-1">
+        <span class="text-[10px] font-black uppercase tracking-widest text-slate-400 block">If Seen, Contact Immediately:</span>
+        <h3 class="text-lg font-black text-slate-900 leading-tight">{{ individual.emergency_contact_name }}</h3>
+        <p class="text-2xl font-black text-red-600 tracking-tight">{{ individual.emergency_contact_phone }}</p>
+      </div>
+      
+      <!-- SCAN TO SCAN SIGHTING LOG -->
+      <div class="text-center space-y-1.5 w-36">
+        {% if individual.qr_code_image %}
+          <img src="{{ individual.qr_code_image.url }}" alt="Scan QR Code" class="w-28 h-28 mx-auto border border-slate-200 p-1.5 rounded-xl bg-white shadow-sm">
+        {% endif %}
+        <span class="text-[8px] font-black text-slate-500 uppercase tracking-wider block leading-tight">Scan QR code instantly to report location</span>
+      </div>
+    </div>
+
+    <!-- FOOTER LOGO BRANDING -->
+    <div class="text-center pt-2 border-t border-slate-100">
+      <p class="text-xs font-bold text-slate-400 tracking-wide">System Powered by BringMeHome Rescue Network</p>
+    </div>
+  </div>
+
+  <div class="no-print text-center mt-6">
+    <a href="{% url 'profile_detail' uuid=individual.id %}" class="text-sm font-bold text-slate-500 hover:text-slate-800 transition">← Back to Profile View Center</a>
+  </div>
+
+</body>
+</html>

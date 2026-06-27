@@ -5,6 +5,7 @@
 
 {% block content %}
 <div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+  <!-- Top Header Section -->
   <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-7">
     <div>
       <h1 class="text-3xl font-extrabold text-primary">Sighting Matches</h1>
@@ -21,9 +22,10 @@
   </div>
 
   <div class="mb-6 text-sm text-slate-600">
-    Showing matches with confidence <span class="font-bold text-hope">{{ threshold }}%+</span>.
+    Showing high-confidence matches at <span class="font-bold text-hope">{{ threshold }}%+</span>.
   </div>
 
+  <!-- SECTION 1: HIGH CONFIDENCE MATCHES -->
   {% if matches %}
     <div class="grid grid-cols-1 gap-6">
       {% for match in matches %}
@@ -33,7 +35,7 @@
               <p class="text-xs font-bold uppercase tracking-widest text-accent">AI Match Confidence</p>
               <p class="text-2xl font-black text-primary">
                 {{ match.confidence|floatformat:0 }}%
-                <span class="text-slate-700 text-base">Match Match</span>
+                <span class="text-slate-700 text-base font-normal">Match Detected</span>
               </p>
             </div>
 
@@ -50,11 +52,7 @@
               <div class="text-center">
                 <p class="text-sm font-bold text-slate-700 mb-3">Original Profile Photo</p>
                 {% if individual.photo %}
-                  <img
-                    src="{{ individual.photo.url }}"
-                    alt="{{ individual.full_name }}"
-                    class="w-full h-52 object-cover rounded-xl border border-slate-200"
-                  />
+                  <img src="{{ individual.photo.url }}" alt="{{ individual.full_name }}" class="w-full h-52 object-cover rounded-xl border border-slate-200" />
                 {% else %}
                   <div class="w-full h-52 bg-slate-100 rounded-xl border border-slate-200 flex items-center justify-center text-xs text-slate-500">No Photo</div>
                 {% endif %}
@@ -64,11 +62,7 @@
               <div class="text-center">
                 <p class="text-sm font-bold text-slate-700 mb-3">Citizen Sighting Photo</p>
                 {% if match.report.uploaded_image %}
-                  <img
-                    src="{{ match.report.uploaded_image.url }}"
-                    alt="Sighting Photo"
-                    class="w-full h-52 object-cover rounded-xl border border-slate-200"
-                  />
+                  <img src="{{ match.report.uploaded_image.url }}" alt="Sighting Photo" class="w-full h-52 object-cover rounded-xl border border-slate-200" />
                 {% else %}
                   <div class="w-full h-52 bg-slate-100 rounded-xl border border-slate-200 flex items-center justify-center text-xs text-slate-500">No Photo</div>
                 {% endif %}
@@ -77,62 +71,73 @@
               <!-- Right: citizen metadata -->
               <div>
                 <p class="text-sm font-bold text-primary mb-3">Citizen Details</p>
-
                 <div class="space-y-3">
                   <div class="bg-slate-50 border border-slate-100 rounded-xl p-3">
                     <p class="text-[10px] uppercase font-black tracking-widest text-slate-500">Time Observed</p>
-                    <p class="text-sm font-bold text-slate-800">
-                      {{ match.report.timestamp|date:"Y-m-d H:i" }}
-                    </p>
+                    <p class="text-sm font-bold text-slate-800">{{ match.report.timestamp|date:"Y-m-d H:i" }}</p>
                   </div>
 
                   <div class="bg-slate-50 border border-slate-100 rounded-xl p-3">
                     <p class="text-[10px] uppercase font-black tracking-widest text-slate-500 flex items-center gap-1">
-                      <span class="text-primary font-black">📍</span>
-                      Location Notes
+                      <span class="text-primary font-black">📍</span> Location Notes
                     </p>
-                    <p class="text-xs text-slate-700 font-semibold leading-snug break-words overflow-wrap-anywhere">
+                    <p class="text-xs text-slate-700 font-semibold leading-snug break-words">
                       {{ match.report.location_found|default:"(not provided)" }}
                     </p>
-                    {% if match.report.latitude and match.report.longitude %}
-                      <p class="mt-2 text-[11px] text-slate-500 font-medium">
-                        Lat/Lng: {{ match.report.latitude }}, {{ match.report.longitude }}
-                      </p>
-                    {% endif %}
                   </div>
 
                   {% if match.reason %}
                     <div class="bg-amber-50 border border-amber-200 rounded-xl p-3">
                       <p class="text-[10px] uppercase font-black tracking-widest text-amber-800">AI Reason</p>
-                      <p class="text-xs text-amber-950 font-semibold leading-relaxed break-words overflow-wrap-anywhere">
-                        {{ match.reason }}
-                      </p>
+                      <p class="text-xs text-amber-950 font-semibold leading-relaxed">{{ match.reason }}</p>
                     </div>
                   {% endif %}
                 </div>
               </div>
-            </div>
-
-            <div class="mt-6 flex items-center justify-between gap-3">
-              <div class="text-xs text-slate-500 font-semibold">
-                Report ID: <span class="font-mono">{{ match.report.id }}</span>
-              </div>
-              <button
-                type="button"
-                class="inline-flex items-center justify-center px-4 py-2 rounded-xl font-bold bg-primary text-white hover:bg-primary-light transition"
-              >
-                Quick View
-              </button>
             </div>
           </div>
         </div>
       {% endfor %}
     </div>
   {% else %}
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-10 text-center">
-      <p class="text-slate-700 font-bold">No high-confidence sighting matches</p>
-      <p class="text-slate-500 mt-2">We filtered matches below {{ threshold }}% to reduce noise.</p>
+    <!-- Fallback default block if zero high confidence reports exist -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center mb-10">
+      <p class="text-slate-700 font-bold text-lg">No high-confidence matches detected</p>
+      <p class="text-slate-500 text-xs mt-1">We filter primary dashboard alerts below {{ threshold }}% to eliminate false positives.</p>
     </div>
   {% endif %}
+
+  <!-- SECTION 2: ALL OTHER RECEIVED CITIZEN SUBMISSIONS -->
+  <div class="mt-12 pt-8 border-t-2 border-dashed border-slate-200">
+    <h2 class="text-xl font-extrabold text-slate-800 mb-1">📋 All Received Sighting Submissions</h2>
+    <p class="text-sm text-slate-500 mb-6">Reviewing low-confidence logs ensures you don't miss bad lighting or blurry photo submissions.</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {% for match in all_reports %}
+        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center gap-4 hover:border-slate-300 transition shadow-sm">
+          {% if match.report.uploaded_image %}
+            <img src="{{ match.report.uploaded_image.url }}" class="w-20 h-20 object-cover rounded-xl bg-slate-50 border">
+          {% else %}
+            <div class="w-20 h-20 bg-slate-100 text-slate-400 text-[10px] flex items-center justify-center rounded-xl border border-dashed">No Image</div>
+          {% endif %}
+          
+          <div class="flex-1 min-w-0 space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="inline-block text-[11px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full {% if match.confidence >= threshold %}bg-green-100 text-green-700{% else %}bg-slate-100 text-slate-600{% endif %}">
+                AI Score: {{ match.confidence|floatformat:0 }}%
+              </span>
+              <span class="text-[10px] text-slate-400">{{ match.report.timestamp|timesince }} ago</span>
+            </div>
+            <p class="text-xs font-bold text-slate-800 truncate">📍 {{ match.report.location_found|default:"Location hidden" }}</p>
+            <p class="text-[11px] font-medium text-slate-400">ID: {{ match.report.id|slice:":8" }}...</p>
+          </div>
+        </div>
+      {% empty %}
+        <div class="col-span-full p-10 text-center text-sm text-slate-400 bg-slate-50 border-2 border-dashed rounded-2xl">
+          No secondary community sighting reports have been registered for this tracking file yet.
+        </div>
+      {% endfor %}
+    </div>
+  </div>
 </div>
 {% endblock %}

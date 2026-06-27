@@ -66,24 +66,7 @@
                 <p class="text-xs text-slate-500 font-semibold mt-0.5">Age {{ individual.age }}</p>
             </div>
 
-            <!-- Automatically Generated Smart ID QR Card -->
-            <div class="bg-white border border-slate-100 shadow-md rounded-2xl p-6 text-center">
-                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Emergency Scan QR Code</h3>
-                <div class="bg-brandBg border border-slate-100 rounded-xl p-4 inline-block shadow-inner">
-                    {% if individual.qr_code_image %}
-                        <img src="{{ individual.qr_code_image.url }}" alt="Smart QR Code" class="h-40 w-40">
-                    {% else %}
-                        <div class="h-40 w-40 bg-slate-100 flex items-center justify-center text-slate-300">
-                            <span class="text-xs font-semibold">Generating...</span>
-                        </div>
-                    {% endif %}
-                </div>
-                <p class="text-[10px] text-slate-400 mt-2.5 max-w-xs mx-auto">
-                    This QR code points directly to a secure, public-safe viewport. Anyone scanning it gets immediate emergency contacts without seeing your home address.
-                </p>
-            </div>
 
-        </div>
 
         <!-- Right Column (Span 2): Administrative details, emergency metadata, and actions -->
         <div class="lg:col-span-2 space-y-6">
@@ -91,24 +74,17 @@
             <!-- Quick Actions Panel -->
             <div class="bg-primary shadow-lg border border-primary-dark rounded-2xl p-6 text-white relative overflow-hidden">
                 <div class="absolute right-0 top-0 -mt-12 -mr-12 w-32 h-32 bg-accent/20 rounded-full blur-2xl"></div>
-                <h3 class="text-lg font-bold tracking-tight mb-2">Instant Emergency Utilities</h3>
+                <h3 class="text-lg font-bold tracking-tight mb-2"> Generate Wall Posters</h3>
                 <p class="text-xs text-slate-300 leading-relaxed mb-5 max-w-xl">
                     Generate highly professional identification templates. We recommend pasting on walls at crowded places.
                 </p>
                 <div class="flex flex-col sm:flex-row gap-3">
-                    <a href="{% url 'digital_id_card' uuid=individual.id %}" target="_blank" class="inline-flex justify-center items-center px-5 py-2.5 rounded-lg font-bold text-sm bg-accent hover:bg-accent-dark text-white transition-all shadow-md">
+                    <a href="{% url 'generate_poster' uuid=individual.id %}" target="_blank" class="inline-flex justify-center items-center px-5 py-2.5 rounded-lg font-bold text-sm bg-accent hover:bg-accent-dark text-white transition-all shadow-md">
                         <svg class="h-4.5 w-4.5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                         </svg>
-                        Generate Poster
+                        Generate Missing Poster
                     </a>
-                    <a href="{% url 'public_scan' uuid=individual.id %}" target="_blank" class="inline-flex justify-center items-center px-5 py-2.5 rounded-lg font-bold text-sm bg-primary-light hover:bg-slate-800 text-white border border-slate-700/60 transition-all">
-                        <svg class="h-4.5 w-4.5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                        View Sighting matches/citizen scans
-                      </a>
                 </div>
             </div>
 
