@@ -73,7 +73,32 @@
         <option value="no" selected>Not sure / No</option>
         <option value="yes">Yes (appears injured / needs help)</option>
       </select>
-      <p class="text-[10px] text-slate-400 mt-1">This will be included in the description when saved (small enhancement for found reports).</p>
+
+
+      <!-- Added "mt-5" to create a beautiful gap between this field and the field above it -->
+<div class="mt-5 bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-sm space-y-2">
+  <label for="reporter_phone" class="text-[10px] uppercase font-black tracking-widest text-slate-500 block">
+    Your Contact Number (Caretaker will use this to call you)
+  </label>
+  
+  <div class="relative mt-1 rounded-xl shadow-sm">
+    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+      <span class="text-slate-400 text-sm">📞</span>
+    </div>
+    <input type="tel" 
+           name="reporter_phone" 
+           id="reporter_phone" 
+           required
+           placeholder="Enter your mobile or contact phone number" 
+           class="block w-full h-11 rounded-xl border-slate-200 pl-10 text-sm font-bold text-slate-800 placeholder-slate-400 focus:border-blue-500 focus:ring-blue-500 transition shadow-inner bg-white">
+  </div>
+  
+  <p class="text-[10px] text-slate-400 italic">
+    Your number is shared securely only with the family member looking for this individual.
+  </p>
+</div>
+
+      <p class="text-[10px] text-slate-400 mt-1">📞 Securely shared with the missing person's family registry panel to facilitate a quick return.</p>
     </div>
 
     <button type="submit" class="w-full py-2 btn-primary rounded">Submit Found Report</button>

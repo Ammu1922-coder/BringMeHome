@@ -9,7 +9,6 @@ urlpatterns = [
     path('profile/<uuid:uuid>/', views.profile_detail, name='profile_detail'),
     path('card/<uuid:uuid>/', views.digital_id_card, name='digital_id_card'),
     path('profile/poster/<uuid:uuid>/', views.generate_poster, name='generate_poster'),
-    path('scan/<uuid:uuid>/', views.public_scan, name='public_scan'),
     path('report/missing/', views.incident_report_missing, name='incident_report_missing'),
     path('report/found/', views.incident_report_found, name='incident_report_found'),
     path('found_alerts/', views.found_alerts, name='found_alerts'),

@@ -5,7 +5,6 @@
 
 {% block content %}
 <div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
-  <!-- Top Header Section -->
   <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-7">
     <div>
       <h1 class="text-3xl font-extrabold text-primary">Sighting Matches</h1>
@@ -22,10 +21,10 @@
   </div>
 
   <div class="mb-6 text-sm text-slate-600">
-    Showing high-confidence matches at <span class="font-bold text-hope">{{ threshold }}%+</span>.
+    Showing high-confidence matches at <span class="font-bold text-hope">{{ threshold|default:"50" }}%+</span>.
   </div>
 
-  <!-- SECTION 1: HIGH CONFIDENCE MATCHES -->
+  {# 🟢 FIXED: Using 'matches' from your view context dictionary #}
   {% if matches %}
     <div class="grid grid-cols-1 gap-6">
       {% for match in matches %}
@@ -45,20 +44,17 @@
             </div>
           </div>
 
-          <!-- Side-by-side images + metadata -->
           <div class="p-6 pt-4">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-              <!-- Left: original profile -->
               <div class="text-center">
                 <p class="text-sm font-bold text-slate-700 mb-3">Original Profile Photo</p>
-                {% if individual.photo %}
-                  <img src="{{ individual.photo.url }}" alt="{{ individual.full_name }}" class="w-full h-52 object-cover rounded-xl border border-slate-200" />
+                {% if match.profile.photo %}
+                  <img src="{{ match.profile.photo.url }}" alt="{{ match.profile.full_name }}" class="w-full h-52 object-cover rounded-xl border border-slate-200" />
                 {% else %}
                   <div class="w-full h-52 bg-slate-100 rounded-xl border border-slate-200 flex items-center justify-center text-xs text-slate-500">No Photo</div>
                 {% endif %}
               </div>
 
-              <!-- Middle: citizen sighting photo -->
               <div class="text-center">
                 <p class="text-sm font-bold text-slate-700 mb-3">Citizen Sighting Photo</p>
                 {% if match.report.uploaded_image %}
@@ -68,7 +64,6 @@
                 {% endif %}
               </div>
 
-              <!-- Right: citizen metadata -->
               <div>
                 <p class="text-sm font-bold text-primary mb-3">Citizen Details</p>
                 <div class="space-y-3">
@@ -86,6 +81,18 @@
                     </p>
                   </div>
 
+                  <div class="bg-blue-50 border border-blue-100 rounded-xl p-3 shadow-sm">
+                    <p class="text-[10px] uppercase font-black tracking-widest text-blue-600 mb-1">📞 Contact Informant</p>
+                    {% if match.reporter_phone %}
+                      <a href="tel:{{ match.reporter_phone }}" class="text-sm font-black text-blue-700 hover:underline block tracking-wide">
+                        {{ match.reporter_phone }}
+                      </a>
+                      <p class="text-[9px] text-blue-500/80 mt-0.5">Click number to dial finder directly</p>
+                    {% else %}
+                      <p class="text-xs text-slate-500 font-bold italic">No phone contact provided</p>
+                    {% endif %}
+                  </div>
+
                   {% if match.reason %}
                     <div class="bg-amber-50 border border-amber-200 rounded-xl p-3">
                       <p class="text-[10px] uppercase font-black tracking-widest text-amber-800">AI Reason</p>
@@ -100,19 +107,18 @@
       {% endfor %}
     </div>
   {% else %}
-    <!-- Fallback default block if zero high confidence reports exist -->
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center mb-10">
       <p class="text-slate-700 font-bold text-lg">No high-confidence matches detected</p>
-      <p class="text-slate-500 text-xs mt-1">We filter primary dashboard alerts below {{ threshold }}% to eliminate false positives.</p>
+      <p class="text-slate-500 text-xs mt-1">We filter primary dashboard alerts below {{ threshold|default:"50" }}% to eliminate false positives.</p>
     </div>
   {% endif %}
 
-  <!-- SECTION 2: ALL OTHER RECEIVED CITIZEN SUBMISSIONS -->
   <div class="mt-12 pt-8 border-t-2 border-dashed border-slate-200">
     <h2 class="text-xl font-extrabold text-slate-800 mb-1">📋 All Received Sighting Submissions</h2>
-    <p class="text-sm text-slate-500 mb-6">Reviewing low-confidence logs ensures you don't miss bad lighting or blurry photo submissions.</p>
+    <p class="text-sm text-slate-500 mb-6">Reviewing log histories ensures you don't miss any community info logs.</p>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {# 🟢 FIXED: Using 'all_reports' to show the complete history timeline grid below #}
       {% for match in all_reports %}
         <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center gap-4 hover:border-slate-300 transition shadow-sm">
           {% if match.report.uploaded_image %}
@@ -123,18 +129,27 @@
           
           <div class="flex-1 min-w-0 space-y-1">
             <div class="flex items-center justify-between">
-              <span class="inline-block text-[11px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full {% if match.confidence >= threshold %}bg-green-100 text-green-700{% else %}bg-slate-100 text-slate-600{% endif %}">
+              <span class="inline-block text-[11px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
                 AI Score: {{ match.confidence|floatformat:0 }}%
               </span>
               <span class="text-[10px] text-slate-400">{{ match.report.timestamp|timesince }} ago</span>
             </div>
             <p class="text-xs font-bold text-slate-800 truncate">📍 {{ match.report.location_found|default:"Location hidden" }}</p>
+            
+            {% if match.reporter_phone %}
+              <p class="text-xs font-bold text-blue-600">
+                📞 Call: <a href="tel:{{ match.reporter_phone }}" class="hover:underline font-black tracking-wide">{{ match.reporter_phone }}</a>
+              </p>
+            {% else %}
+              <p class="text-[11px] font-medium text-slate-400 italic">No contact provided</p>
+            {% endif %}
+            
             <p class="text-[11px] font-medium text-slate-400">ID: {{ match.report.id|slice:":8" }}...</p>
           </div>
         </div>
       {% empty %}
         <div class="col-span-full p-10 text-center text-sm text-slate-400 bg-slate-50 border-2 border-dashed rounded-2xl">
-          No secondary community sighting reports have been registered for this tracking file yet.
+          No community sighting reports have been registered yet.
         </div>
       {% endfor %}
     </div>

@@ -171,7 +171,8 @@ def found_alerts(request):
     to prevent API rate limits, falling back gracefully to text heuristics.
     """
     family_profiles = VulnerableIndividual.objects.filter(
-        status__in=['missing', 'Missing', 'active', 'Active',]
+        creator=request.user,
+        status__in=['missing', 'Missing', 'active', 'Active','Found','found','Resolved','resolved']
     )
     
     recent_reports = IncidentReport.objects.filter(
@@ -188,7 +189,6 @@ def found_alerts(request):
         report_text = ' '.join([
             (report.description or '').lower(),
             (report.location_found or '').lower(),
-        
         ])
         profile_words = set(w for w in profile_text.split() if len(w) > 3)
         report_words = set(w for w in report_text.split() if len(w) > 3)
@@ -214,6 +214,9 @@ def found_alerts(request):
             if key in seen:
                 continue
 
+            # Check if the informant's phone number field exists on the report instance
+            reporter_phone = report.reporter_phone if hasattr(report, 'reporter_phone') else None
+
             cached_match = GeminMatchCache.objects.filter(profile=profile, report=report).first()
             if cached_match:
                 if cached_match.confidence >= 10.0:
@@ -223,6 +226,7 @@ def found_alerts(request):
                         'report': report,
                         'confidence': cached_match.confidence,
                         'reason': cached_match.reason or "Loaded from database cache.",
+                        'reporter_phone': reporter_phone,  # Added to Cache Match
                     })
                 continue
 
@@ -262,6 +266,7 @@ def found_alerts(request):
                             'report': report,
                             'confidence': score,
                             'reason': text,
+                            'reporter_phone': reporter_phone,  # Added to Gemini Match
                         })
 
                 except Exception:
@@ -273,7 +278,8 @@ def found_alerts(request):
                             'report': report,
                             'confidence': score,
                             'reason': 'Fallback Match: API limit reached.',
-                        })
+                            'reporter_phone': reporter_phone,  # Added to Gemini Fallback
+                        })   
             else:
                 score = simple_text_score(profile, report)
                 if score >= 10.0:
@@ -283,8 +289,10 @@ def found_alerts(request):
                         'report': report,
                         'confidence': score,
                         'reason': 'Possible text-based match.',
+                        'reporter_phone': reporter_phone,  # Added to Text Match
                     })
 
+    # Sort and remove duplicates from memory matching arrays
     matches = sorted(matches, key=lambda m: m.get('confidence', 0), reverse=True)
     deduped = []
     seen_profiles = set()
@@ -295,43 +303,42 @@ def found_alerts(request):
         seen_profiles.add(pid)
         deduped.append(m)
 
-
-        with transaction.atomic():
-            for m in deduped:
-                profile = m.get('profile')
-                report = m.get('report')
-                confidence_score = m.get('confidence', 0)
+    # Fixed: execution block wrapped in atomic context correctly from the outside
+    with transaction.atomic():
+        for m in deduped:
+            profile = m.get('profile')
+            report = m.get('report')
+            confidence_score = m.get('confidence', 0)
+            
+            if not profile or not report:
+                continue
+            
+            current_status = str(getattr(profile, 'status', '')).lower()
+            
+            # STAGE GATE 1: Only touch profiles that are actively missing
+            if current_status in {'missing', 'active'}:
                 
-                if not profile or not report:
-                    continue
-                
-                current_status = str(getattr(profile, 'status', '')).lower()
-                
-                # STAGE GATE 1: Only touch profiles that are actively missing
-                if current_status in {'missing', 'active'}:
+                # STAGE GATE 2: Only resolve if match is >= 50%
+                if confidence_score >= 50.0:
+                    profile.status = 'Found'
                     
-                    # STAGE GATE 2: STRIKT CHECK - Only resolve if match is >= 50%
-                    if confidence_score >= 50.0:
-                        profile.status = 'Found'
-                        
-                        # Fix the address bug: update last_known_location with where they were found
-                        if report.location_found:
-                            profile.last_known_location = report.location_found
-                        elif report.description:
-                            # Fallback to description text if location notes are blank
-                            profile.last_known_location = report.description[:100]
-                        
-                        profile.save(update_fields=['status', 'last_known_location'])
+                    # Update last_known_location with where they were found
+                    if report.location_found:
+                        profile.last_known_location = report.location_found
+                    elif report.description:
+                        # Fallback to description text if location notes are blank
+                        profile.last_known_location = report.description[:100]
+                    
+                    profile.save(update_fields=['status', 'last_known_location'])
                 else:
-                    # If match score is below 50% (like the 14% match), DO NOT TOUCH STATUS.
-                    # It will safely stay in the Active Missing tab!
+                    # If match score is below 50%, skip status modification safely
                     continue
 
-
-
-
-
-
+    # Return the clean deduped collection context to your dashboard view templates
+    return render(request, 'registry/found_alerts.html', {
+        'deduped_matches': deduped,
+        'matches':deduped,
+    })
 
 
 @login_required
@@ -342,22 +349,26 @@ def report_missing(request, uuid):
     # SAFE LOOKUP: Replaces any risky [0] or direct indexes
     individual = get_object_or_404(VulnerableIndividual, id=uuid, creator=request.user)
     
-    individual.status = 'Missing'
-    individual.save()
+    # 🟢 FIXED: Changed 'Missing' to 'missing' to match your registration system!
+    individual.status = 'missing'
+    individual.save(update_fields=['status'])  # Performance boost: only save the changed field
+    
     messages.warning(request, f"CRITICAL: {individual.full_name} has been reported missing!")
     return redirect('family_dashboard')
 
 
 @login_required
 def report_safe(request, uuid):
-    if request.method != 'POST':
-        return HttpResponseBadRequest('POST required')
+    if request.method == 'POST':
+        individual = get_object_or_404(VulnerableIndividual, id=uuid, creator=request.user)
+        
     
     # SAFE LOOKUP: Replaces any risky [0] or direct indexes
     individual = get_object_or_404(VulnerableIndividual, id=uuid, creator=request.user)
     
-    individual.status = 'Safe'
+    individual.status = 'found'
     individual.save()
+
     messages.success(request, f"Wonderful news! {individual.full_name} has been marked safe.")
     return redirect('family_dashboard')
 
@@ -464,23 +475,52 @@ def incident_success(request):
     """Render a clean confirmation screen when a report is submitted successfully."""
     return render(request, 'registry/incident_success.html')
 
-
 @login_required
 def delete_profile(request, uuid):
-    """Delete a profile and redirect back to the dashboard.
-    Only the creator of the profile can delete it.
-    """
-    profile = get_object_or_404(VulnerableIndividual, id=uuid, creator=request.user)
-    # Perform deletion
+    """Safely delete a profile record."""
+    # 🟢 If you are a staff/admin user, bypass the creator restriction
+    if request.user.is_staff:
+        profile = get_object_or_404(VulnerableIndividual, id=uuid)
+    else:
+        # Regular users can still only delete their own registered profiles
+        profile = get_object_or_404(VulnerableIndividual, id=uuid, creator=request.user)
+    
+    # Perform the deletion
     profile.delete()
+    
+    messages.success(request, "The profile has been successfully permanently removed.")
     return redirect('family_dashboard')
+
 
 @login_required
 def family_dashboard(request):
-    """Render the central dashboard showcasing all tracked individuals uniquely."""
-    # This retrieves all profiles for the user as a clean list, avoiding IndexError entirely!
-    individuals = VulnerableIndividual.objects.filter(creator=request.user).distinct()
-    return render(request, 'registry/dashboard.html', {'individuals': individuals})
+    """Dashboard view showing ONLY the profiles registered by the logged-in user."""
+    
+    # 🏡 My Secured Profiles
+    secured_profiles = VulnerableIndividual.objects.filter(
+        creator=request.user,
+        status__in=['safe', 'Safe', 'safeguard', 'Safeguard', 'active', 'Active']
+    )
+
+    # 🚨 My Active Missing Reports
+    active_missing = VulnerableIndividual.objects.filter(
+        creator=request.user,
+        status__in=['missing', 'Missing']
+    )
+
+    # ✅ My Resolved Cases
+    resolved_cases = VulnerableIndividual.objects.filter(
+        creator=request.user,
+        status__in=['Found', 'found']
+    )
+
+    return render(request, 'registry/dashboard.html', {
+        'secured_profiles': secured_profiles,
+        'active_missing': active_missing,
+        'resolved_cases': resolved_cases,
+    })
+
+
 
 @login_required
 def gemini_chat(request):
