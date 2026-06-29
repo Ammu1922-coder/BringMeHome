@@ -66,12 +66,11 @@
                   {% if match.reason %}
                     <p class="text-xs text-slate-500 mt-1">{{ match.reason }}</p>
                   {% endif %}
-                </div>
 
-                <a href="#" class="inline-flex items-center justify-center px-6 py-3 rounded-xl font-bold bg-primary text-white hover:bg-primary-light transition" onclick="alert('Match Score: {{ match.confidence|floatformat:0 }}%\\n\\n{{ match.reason|escapejs }}'); return false;">
-                  View Details
-                </a>
+                </div>
+                <a href="#" class="inline-flex items-center justify-center px-6 py-3 rounded-xl font-bold bg-primary text-white hover:bg-primary-light transition" onclick="let r = '{{ match.reason|escapejs }}'.replace(/\\n/g, '\n').replace(/\*\*/g, ''); alert('Match Score: {{ match.confidence|floatformat:0 }}%\n\n' + r); return false;">View Details</a>
               </div>
+              
             </div>
           </div>
         {% endfor %}

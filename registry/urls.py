@@ -23,6 +23,9 @@ urlpatterns = [
     path('profile/delete/<uuid:uuid>/', views.delete_profile, name='delete_profile'),
     path('profile/report-missing/<uuid:uuid>/', views.report_missing, name='report_missing'),
     path('profile/report-safe/<uuid:uuid>/', views.report_safe, name='report_safe'),
+    path('report-incident-auto/', views.report_incident_auto, name='report_incident_auto'),
+    path('profile/<uuid:pk>/', views.profile_detail, name='profile_detail'),
+
 ]
 
 

@@ -359,6 +359,12 @@
           </svg>
         </button>
       </div>
+
+              <button type="button" id="stop-voice-btn" onclick="stopAISpeaking()" 
+        class="p-2 rounded-xl text-slate-500 hover:text-red-500 hover:bg-slate-100 transition" 
+        title="Stop AI Voice">
+    🚫 Stop Audio
+      </button>
     </div>
   </div>
 
@@ -444,7 +450,15 @@
             lastVoiceReply = reply;
             lastVoiceLangCode = langCode;
 
-            speakMessage(reply, langCode);
+
+           const cleanSpeechText = reply
+                .replace(/\*/g, '')          // Removes all bold/italic asterisks
+                .replace(/#/g, '')           // Removes header symbols
+                .replace(/-\s+/g, '')        // Cleans up dash bullet items
+                .trim();
+
+            // Pass the cleaned text to the speech function
+            speakMessage(cleanSpeechText, langCode);
 
         } catch (err) {
             removeChatMessage('ai-thinking');
@@ -526,8 +540,10 @@
       });
     }
 
+    if (tabButtons.length > 0) {
     tabButtons.forEach(btn => btn.addEventListener('click', () => setActive(btn.dataset.tab)));
     setActive('secured');
+    }
   })();
 
   // Added Missing Share Link Function
@@ -540,10 +556,89 @@ function copyShareLink(profileId) {
         });
     }
 
-    // Dummy fallback for voice toggle if not implemented elsewhere
-    function toggleVoiceInput() {
-        alert('Voice recognition feature initialization...');
+    // 🟢 FIXED: Full Web Speech API implementation connected to your language selector
+function toggleVoiceInput() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+        alert('Speech recognition is not supported in this browser. Please use Google Chrome or Microsoft Edge.');
+        return;
     }
 
+    const inputField = document.getElementById('floating-user-question');
+    const voiceButton = document.getElementById('mic-btn');
+    // const voiceButton = document.querySelector('[onclick="toggleVoiceInput()"]'); // Target mic button
+
+    // If already recording, stop it manually
+    if (isVoiceRecording && currentRecognition) {
+        currentRecognition.stop();
+        return;
+    }
+
+    // 1. Read language configurations directly from your existing drop-down menu
+    const langSelect = document.getElementById('floatingLanguageSelect');
+    const selectedLangCode = langSelect.options[langSelect.selectedIndex].getAttribute('data-code') || 'en-IN';
+
+    // 2. Initialize engine configurations
+    currentRecognition = new SpeechRecognition();
+    currentRecognition.lang = selectedLangCode;
+    currentRecognition.interimResults = false;
+    currentRecognition.maxAlternatives = 1;
+
+    currentRecognition.onstart = function() {
+        isVoiceRecording = true;
+        if (voiceButton) {
+            voiceButton.style.backgroundColor = '#ef4444';
+            voiceButton.style.color = '#ffffff'; // Turns mic red while listening
+        }
+        inputField.placeholder = "Listening (" + selectedLangCode + ")... Speak now.";
+    };
+
+    currentRecognition.onerror = function(event) {
+        console.error('Speech recognition error:', event.error);
+        if (event.error === 'not-allowed') {
+            alert('Microphone permission blocked. Please enable mic access in your browser location settings.');
+        } else {
+            alert('Voice module initialization error: ' + event.error);
+        }
+        resetVoiceUI();
+    };
+
+    currentRecognition.onend = function() {
+        resetVoiceUI();
+    };
+
+    currentRecognition.onresult = function(event) {
+        const transcriptResult = event.results[0][0].transcript;
+        if (transcriptResult) {
+            inputField.value = transcriptResult;
+            // Automatically submit query once speech finishes processing
+            submitFloatingQuestion();
+        }
+    };
+
+function resetVoiceUI() {
+        isVoiceRecording = false;
+        if (voiceButton) {
+            voiceButton.style.backgroundColor = ''; 
+            voiceButton.style.color = '';// Reset button color
+        }
+        inputField.placeholder = "Ask a question about the missing individual...";
+    }
+
+    // 3. Fire up microphone session window
+    currentRecognition.start();
+}
+
+
+function stopAISpeaking() {
+    // 1. Instantly silence the Web Speech synthesis audio queue
+    if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+    }
+    
+}
+
+ 
 </script>
 {% endblock %}

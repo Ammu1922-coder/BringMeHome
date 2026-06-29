@@ -51,16 +51,17 @@ class VulnerableIndividual(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
-        # Generate QR code automatically if it doesn't exist yet
-        if not self.qr_code_image:
+        # # Generate QR code automatically if it doesn't exist yet
             qr = qrcode.QRCode(
-                version=1,
-                error_correction=qrcode.constants.ERROR_CORRECT_L,
-                box_size=10,
-                border=4,
-            )
-            # Encode the secure public scan link
-            qr_data = f"http://localhost:8000/registry/scan/{self.id}/"
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+                )
+            
+            # 🟢 CLEAN URL: Make sure it ends cleanly with just ONE extension (.dev or .app)
+            # Inside models.py -> save() method
+            qr_data = f"https://thinner-pruning-only.ngrok-free.dev/profile/{self.id}/?action=scan_report"
             qr.add_data(qr_data)
             qr.make(fit=True)
             
@@ -68,10 +69,11 @@ class VulnerableIndividual(models.Model):
             buffer = BytesIO()
             img.save(buffer, format='PNG')
             
-            filename = f"qr_{self.id}.png"
+            # Use self.uuid or self.id depending on your model primary key setup
+            filename = f"qr_{self.id}.png" 
             self.qr_code_image.save(filename, File(buffer), save=False)
 
-        super().save(*args, **kwargs)
+            super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.full_name} ({self.get_status_display()})"
@@ -84,6 +86,15 @@ class IncidentReport(models.Model):
     )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    
+    individual = models.ForeignKey(
+    'registry.VulnerableIndividual', 
+    on_delete=models.CASCADE, 
+    related_name='reports',
+    null=True,      # Add this
+    blank=True
+    )
+    
     reporter = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,

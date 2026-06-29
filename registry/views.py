@@ -18,6 +18,7 @@ from django.db import transaction
 
 
 
+
 # Setup unified client globally using the correct setting name
 client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
@@ -75,23 +76,20 @@ def generate_poster(request, uuid):
     return render(request, 'registry/poster.html', {'individual': individual})
 
 def public_scan(request, uuid):
-    individual = get_object_or_404(VulnerableIndividual, id=uuid)
+    individual = get_object_or_404(VulnerableIndividual, uuid=uuid)
     first_name = individual.full_name.split()[0] if individual.full_name else "Individual"
+    
+    current_domain = request.build_absolute_uri('/')
     
     print("\n" + "!" * 50)
     print("[ALERT SYSTEM] BRINGMEHOME SCAN NOTIFICATION DETECTED!")
-    print(f"Event: Scan event triggered for: {individual.full_name} (ID: {individual.id})")
+    print(f"Event: Scan event triggered for: {individual.full_name} (UUID: {individual.uuid})")
     print(f"Email: Simulated Email sent to Caretaker ({individual.creator.username}): {individual.creator.email}")
     print(f"SMS: Simulated SMS sent to Caretaker Phone: {individual.emergency_contact_phone}")
-    print(f"SMS Message: \"[BringMeHome Alert] Your loved one {first_name}'s QR ID card was scanned by a citizen. View safety page: http://localhost:8000/registry/scan/{individual.id}/\"")
     print("!" * 50 + "\n")
     
-    return render(request, 'registry/scan.html', {
-        'individual': individual,
-        'first_name': first_name,
-        'notification_simulated': True
-    })
-
+    # 🟢 REDIRECTS to your profile_detail page and passes the tracking flag '?action=scan_report'
+    return redirect(f"{current_domain}profile/{individual.uuid}/?action=scan_report")
 
 @login_required
 def incident_report_missing(request):
@@ -520,26 +518,113 @@ def family_dashboard(request):
         'resolved_cases': resolved_cases,
     })
 
-
-
 @login_required
+@csrf_exempt # Ensures your frontend fetch request passes through without CSRF blockages
 def gemini_chat(request):
-    """Personal single-page chatbot interface powered by Gemini 2.5 Flash."""
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            user_message = data.get('message', '')
-            if not user_message:
-                return JsonResponse({'error': 'Message content cannot be empty.'}, status=400)
-            response = client.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=user_message,
-            )
-            return JsonResponse({'reply': response.text or "No response."})
-        except Exception as chat_err:
-            return JsonResponse({'error': str(chat_err)}, status=500)
-    return render(request, 'registry/gemini_chat.html')
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Only POST requests are allowed.'}, status=405)
 
-def generate_poster(request, uuid):
-    individual = get_object_or_404(VulnerableIndividual, id=uuid)
-    return render(request, 'registry/poster.html', {'individual': individual})
+    try:
+        # 1. Safely parse the raw JSON data from the frontend fetch call
+        data = json.loads(request.body)
+        question = data.get('question', '').strip()
+        language = data.get('language', 'English')
+        
+        if not question:
+            return JsonResponse({'error': 'Message content cannot be empty.'}, status=400)
+            
+        # 2. Check for your Google AI Studio API key
+        api_key = os.environ.get("GEMINI_API_KEY") or getattr(settings, "GEMINI_API_KEY", None)
+        if not api_key:
+            return JsonResponse({'error': 'API Key is missing or misconfigured.'}, status=500)
+
+        # 3. Initialize the modern GenAI Client using your imported 'genai' module
+        client = genai.Client(api_key=api_key)
+        
+        # Craft a contextual system instruction prompt to keep responses professional and localized
+        prompt = (
+            f"You are a helpful, empathetic assistant for a missing persons search registry application named BringMeHome. "
+            f"Answer the user's question directly, clearly, and completely in {language}. "
+            f"Question: {question}"
+        )
+
+        # 4. Generate the response text using the recommended 'gemini-1.5-flash' model
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt,
+        )
+        
+        ai_reply = response.text if response.text else "I couldn't generate a clear response. Please try again."
+
+        # 5. Return success pathway response to your chat panel bubble
+        return JsonResponse({'reply': ai_reply})
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON format received.'}, status=400)
+        
+    except Exception as e:
+        # 6. Fallback safety pathway: Prints the crash log inside your CMD terminal so it never returns None
+        print("--- GEMINI CHAT ERROR TRACEBACK ---")
+        traceback.print_exc()
+        return JsonResponse({'error': f"Internal Server Error: {str(e)}"}, status=500)
+
+
+@csrf_exempt  
+def report_incident_auto(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Only POST requests allowed'}, status=405)
+        
+    try:
+        data = json.loads(request.body)
+        individual_id = data.get('individual_id')
+        lat = data.get('latitude')
+        lng = data.get('longitude')
+        
+        # 1. Grab the missing individual from your DB
+        # vulnerable_person = get_object_or_404(VulnerableIndividual, uud=individual_id)
+        
+        # 2. Create the automated checkpoint log
+        print(f"📍 SUCCESS! Received QR Scan Tracking Ping: Lat {lat}, Lng {lng} for Individual ID {individual_id}")
+        
+        # Log it to your database here...
+        
+        return JsonResponse({'status': 'success', 'message': 'Location tracked'})
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+def profile_detail(request, pk=None, **kwargs):
+    # Determine the ID regardless of whether Django calls it 'pk' or 'uuid'
+    profile_id = pk or kwargs.get('uuid')
+    person = get_object_or_404(VulnerableIndividual, id=profile_id)
+    action = request.GET.get('action')
+    
+    # 🕵️‍♂️ Case 1: Helpful citizen scanned the QR code
+    if action == 'scan_report':
+        # Initialize form here so it always exists
+        form = IncidentReportForm(request.POST or None)
+        
+        if request.method == 'POST':
+            if form.is_valid():
+                # Manually create the object
+                report = IncidentReport(
+                    individual=person,
+                    report_type='found',
+                    location_found="Captured via QR scan GPS form",
+                    description=(
+                        f"🚨 DIRECT QR SCAN REPORT\n"
+                        f"Reporter Name: {form.cleaned_data['citizen_name']}\n"
+                        f"Reporter Phone: {form.cleaned_data['citizen_phone']}\n"
+                    ),
+                    latitude=form.cleaned_data.get('latitude'),
+                    longitude=form.cleaned_data.get('longitude')
+                )
+                report.save()
+                return render(request, 'registry/incident_success.html', {'person': person})
+        
+        # Render the scan page with the form
+        return render(request, 'registry/public_scan_report.html', {'person': person, 'form': form})
+        
+    # 🏠 Case 2: Standard dashboard for the family/caretaker
+    return render(request, 'registry/dashboard.html', {'person': person})

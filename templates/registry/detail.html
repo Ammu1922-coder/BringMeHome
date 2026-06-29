@@ -160,4 +160,54 @@
 
     </div>
 </div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // Checks if the user landed here by scanning the digital ID QR code (?action=scan_report)
+    if (urlParams.get('action') === 'scan_report') {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(sendScanLocation, handleLocationError, {
+                enableHighAccuracy: true,
+                timeout: 10000
+            });
+        }
+    }
+});
+
+function sendScanLocation(position) {
+    const latitude = position.coords.latitude;
+    const longitude = position.coords.longitude;
+    
+    // Extracts the UUID from your current URL path (/profile/<uuid>/)
+    const pathArray = window.location.pathname.split('/');
+    const cleanPath = pathArray.filter(segment => segment.length > 0);
+    const individualUuid = cleanPath[cleanPath.length - 1];
+
+    fetch('/report-incident-auto/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            latitude: latitude,
+            longitude: longitude,
+            individual_id: individualUuid // Sends the UUID to the backend receiver
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert("📍 Safeguard Registry: Sighting location successfully registered!");
+    })
+    .catch(err => console.error("Error logging automated checkpoint location:", err));
+}
+
+function handleLocationError(error) {
+    console.warn("Location tracking permission was skipped or denied by user browser.");
+}
+</script>
+
 {% endblock %}

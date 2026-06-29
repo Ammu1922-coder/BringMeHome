@@ -1,5 +1,5 @@
 from django import forms
-from .models import VulnerableIndividual
+from .models import VulnerableIndividual,IncidentReport
 
 class VulnerableIndividualForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
@@ -79,21 +79,20 @@ class VulnerableIndividualForm(forms.ModelForm):
             raise forms.ValidationError("Please enter a valid emergency telephone number (minimum 7 digits).")
         return phone
 
+from django import forms
+
 class IncidentReportForm(forms.Form):
-    image = forms.ImageField(required=False, widget=forms.ClearableFileInput(attrs={
-        'class': 'block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-hope/10 file:text-primary hover:file:bg-hope/25 transition-all cursor-pointer',
+    # Only keeping Name and Phone as requested
+    citizen_name = forms.CharField(max_length=255, required=True, widget=forms.TextInput(attrs={
+        'class': 'block w-full rounded-lg border-slate-300 shadow-sm focus:border-hope focus:ring-hope sm:text-sm p-3 border',
+        'placeholder': 'Your Name'
     }))
-    description = forms.CharField(widget=forms.Textarea(attrs={
-        'class': 'block w-full rounded-lg border-slate-300 shadow-sm focus:border-hope focus:ring-hope sm:text-sm p-3 border h-32',
-        'placeholder': 'Describe the situation, condition of the person, any visible injuries, etc.'
-    }), required=True)
-    datetime = forms.DateTimeField(widget=forms.DateTimeInput(attrs={
-        'type': 'datetime-local',
+    
+    citizen_phone = forms.CharField(max_length=20, required=True, widget=forms.TextInput(attrs={
         'class': 'block w-full rounded-lg border-slate-300 shadow-sm focus:border-hope focus:ring-hope sm:text-sm p-3 border',
-    }), required=True)
-    latitude = forms.DecimalField(widget=forms.HiddenInput())
-    longitude = forms.DecimalField(widget=forms.HiddenInput())
-    location_notes = forms.CharField(widget=forms.TextInput(attrs={
-        'class': 'block w-full rounded-lg border-slate-300 shadow-sm focus:border-hope focus:ring-hope sm:text-sm p-3 border',
-        'placeholder': 'Optional: address or landmark description'
-    }), required=False)
+        'placeholder': 'Your Phone Number'
+    }))
+
+    # Keeping these as hidden fields so they can still capture the GPS
+    latitude = forms.DecimalField(widget=forms.HiddenInput(), required=False)
+    longitude = forms.DecimalField(widget=forms.HiddenInput(), required=False)
