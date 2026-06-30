@@ -71,9 +71,26 @@ def digital_id_card(request, uuid):
     individual = get_object_or_404(VulnerableIndividual, id=uuid)
     return render(request, 'registry/id_card.html', {'individual': individual})
 
+# def generate_poster(request, uuid):
+#     individual = get_object_or_404(VulnerableIndividual, id=uuid)
+#     return render(request, 'registry/poster.html', {'individual': individual})
+
 def generate_poster(request, uuid):
     individual = get_object_or_404(VulnerableIndividual, id=uuid)
-    return render(request, 'registry/poster.html', {'individual': individual})
+
+    print("========== POSTER ==========")
+    print("ID:", individual.id)
+    print("Name:", individual.full_name)
+    print("Age:", individual.age)
+    print("Address:", individual.address)
+    print("Emergency Contact:", individual.emergency_contact_name)
+    print("Phone:", individual.emergency_contact_phone)
+    print("Medical Notes:", individual.medical_notes)
+    print("Last Known:", individual.last_known_location)
+
+    return render(request, "registry/poster.html", {
+        "individual": individual
+    })
 
 def public_scan(request, uuid):
     individual = get_object_or_404(VulnerableIndividual, uuid=uuid)
@@ -492,9 +509,10 @@ def delete_profile(request, uuid):
 
 @login_required
 def family_dashboard(request):
-    """Dashboard view showing ONLY the profiles registered by the logged-in user."""
-    
-    # 🏡 My Secured Profiles
+
+
+    new_reports = IncidentReport.objects.filter(individual=person, is_viewed=False).order_by("-timestamp")
+
     secured_profiles = VulnerableIndividual.objects.filter(
         creator=request.user,
         status__in=['safe', 'Safe', 'safeguard', 'Safeguard', 'active', 'Active']
@@ -512,10 +530,32 @@ def family_dashboard(request):
         status__in=['Found', 'found']
     )
 
+    new_found_alerts = IncidentReport.objects.filter(
+    individual__creator=request.user,
+    report_type='found',
+    is_viewed=False
+    ).order_by('-timestamp')
+
+    new_reports = IncidentReport.objects.filter(
+    individual__creator=request.user,
+    is_viewed=False
+    )
+
+    latest_scan = IncidentReport.objects.filter(
+    individual__creator=request.user,
+    report_type='found',
+    is_viewed=False
+    ).order_by('-timestamp').first()
+
     return render(request, 'registry/dashboard.html', {
+        'person': person,
+        'new_reports': new_reports,
         'secured_profiles': secured_profiles,
         'active_missing': active_missing,
         'resolved_cases': resolved_cases,
+        'new_found_alerts': new_found_alerts,
+        'latest_scan': latest_scan,
+        "new_reports": new_reports,
     })
 
 @login_required
@@ -628,3 +668,37 @@ def profile_detail(request, pk=None, **kwargs):
         
     # 🏠 Case 2: Standard dashboard for the family/caretaker
     return render(request, 'registry/dashboard.html', {'person': person})
+
+
+def view_report(request, report_id):
+    report = get_object_or_404(IncidentReport, id=report_id)
+
+    print("========== REPORT ==========")
+    print("Report ID:", report.id)
+    print("Individual:", report.individual)
+
+    if report.individual:
+        print("Individual ID:", report.individual.id)
+        print("Name:", report.individual.full_name)
+        print("Emergency Contact:", report.individual.emergency_contact_name)
+        print("Phone:", report.individual.emergency_contact_phone)
+        print("Address:", report.individual.address)
+
+    report.is_viewed = True
+    report.save()
+
+    return render(request, "registry/detail.html", {"report": report, 'individual':report.individual,
+    })
+
+# def view_report(request, report_id):
+#     report = get_object_or_404(IncidentReport, id=report_id)
+    
+#     # Add these print statements
+#     print(f"--- DEBUGGING REPORT ---")
+#     print(f"Individual: {report.individual}")
+#     print(f"Name: {report.individual.full_name if report.individual else 'No Individual'}")
+    
+#     report.is_viewed = True
+#     report.save()
+    
+#     return render(request, 'registry/detail.html', {'report': report})

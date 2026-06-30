@@ -124,9 +124,15 @@ class IncidentReport(models.Model):
         help_text="Optional audio note transcription if a voice report was submitted."
     )
 
+    is_viewed = models.BooleanField(default=False)
+
+    finder_name = models.CharField(max_length=100, blank=True, null=True)
+    finder_phone = models.CharField(max_length=20, blank=True, null=True)
+
     def __str__(self):
         reporter_name = self.reporter.username if self.reporter else "Anonymous"
         return f"Report {str(self.id)[:8]} by {reporter_name} at {self.timestamp.strftime('%Y-%m-%d %H:%M')}"
+
 class PotentialMatch(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     incident_report = models.ForeignKey(

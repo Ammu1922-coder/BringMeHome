@@ -52,6 +52,49 @@
 {% endblock %}
 
 {% block content %}
+
+{% if latest_scan %}
+<div class="mb-6 rounded-xl border-l-8 border-red-600 bg-red-50 p-6 shadow-lg">
+    <h2 class="text-xl font-bold text-red-700">
+        🔔 NEW FOUND ALERT
+    </h2>
+
+    <p class="mt-3 text-gray-700">
+        Someone scanned <strong>{{ latest_scan.individual.full_name }}</strong>'s QR Code.
+    </p>
+
+    <p class="mt-2">
+        📍 <strong>{{ latest_scan.location_found }}</strong>
+    </p>
+
+    <p class="mt-2">
+        🕒 {{ latest_scan.timestamp|timesince }} ago
+    </p>
+
+    <p class="mt-2">
+        👤 Finder: <strong>{{ latest_scan.finder_name }}</strong>
+    </p>
+
+    <p class="mt-2">
+        📞 {{ latest_scan.finder_phone }}
+    </p>
+
+    <a href="{% url 'view_report' latest_scan.id %}"
+       class="inline-block mt-4 bg-red-600 text-white px-4 py-2 rounded-lg">
+       View Details
+    </a>
+</div>
+{% endif %}
+
+{% if new_reports %}
+    <div style="background-color: #fff3cd; border: 2px solid #ffeeba; padding: 20px; margin-bottom: 20px; border-radius: 10px;">
+        ...
+    </div>
+{% endif %}
+
+<h2>Dashboard for {{ person.full_name }}</h2>
+
+
 <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
 
   <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">

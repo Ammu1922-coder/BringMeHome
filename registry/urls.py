@@ -25,6 +25,7 @@ urlpatterns = [
     path('profile/report-safe/<uuid:uuid>/', views.report_safe, name='report_safe'),
     path('report-incident-auto/', views.report_incident_auto, name='report_incident_auto'),
     path('profile/<uuid:pk>/', views.profile_detail, name='profile_detail'),
+    path('report/<uuid:report_id>/', views.view_report, name='view_report'),
 
 ]
 
