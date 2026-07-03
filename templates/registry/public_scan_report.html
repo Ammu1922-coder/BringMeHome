@@ -18,6 +18,15 @@
     
     <div id="gps-status">Please enable location access to alert the family.</div>
 
+
+
+    {% if form.errors %}
+        <div style="background: #ffe6e6; color: #cc0000; padding: 15px; margin-bottom: 20px; border: 1px solid #cc0000;">
+            <strong>Please fix the following:</strong>
+            {{ form.errors }}
+        </div>
+    {% endif %}
+
     <form method="POST" id="reportForm">
         {% csrf_token %}
         
@@ -33,6 +42,7 @@
 
         <input type="hidden" id="lat" name="latitude">
         <input type="hidden" id="lon" name="longitude">
+        <input type="hidden" id="location_name" name="location_name">
 
         <button type="submit" id="submit-btn" disabled>Send Location & Contact Details</button>
     </form>
@@ -41,16 +51,36 @@
 
 
 <script>
-    // Simple GPS script to fill the hidden fields
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(function(position) {
-            document.getElementById('lat').value = position.coords.latitude;
-            document.getElementById('lon').value = position.coords.longitude;
-            document.getElementById('gps-status').innerText = "✅ Location secured!";
-            document.getElementById('gps-status').style.color = "green";
-            document.getElementById('submit-btn').disabled = false;
-        });
-    }
+if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(async function(position) {
+
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+
+        document.getElementById('lat').value = lat;
+        document.getElementById('lon').value = lon;
+
+        try {
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`
+            );
+
+            const data = await response.json();
+
+            document.getElementById("location_name").value =
+                data.display_name;
+
+        } catch (e) {
+            document.getElementById("location_name").value =
+                lat + ", " + lon;
+        }
+
+        document.getElementById('gps-status').innerText = "✅ Location secured!";
+        document.getElementById('gps-status').style.color = "green";
+        document.getElementById('submit-btn').disabled = false;
+
+    });
+}
 </script>
 </body>
 </html>

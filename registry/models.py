@@ -37,6 +37,10 @@ class VulnerableIndividual(models.Model):
         blank=True,
         help_text="Last known location coordinates or descriptive address."
     )
+    instructions_for_finder = models.TextField(
+    blank=True,
+    help_text="Instructions for anyone who finds this person."
+    )
     qr_code_image = models.ImageField(
         upload_to='qr_codes/',
         blank=True,

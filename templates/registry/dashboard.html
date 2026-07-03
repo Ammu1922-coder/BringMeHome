@@ -68,21 +68,28 @@
     </p>
 
     <p class="mt-2">
+        {% if latest_scan.timestamp|timesince == "0 minutes" or latest_scan.timestamp|timesince == "0 minutes" %}
+        🕒 Just now
+        {% else %}
         🕒 {{ latest_scan.timestamp|timesince }} ago
+        {% endif %}
     </p>
 
     <p class="mt-2">
-        👤 Finder: <strong>{{ latest_scan.finder_name }}</strong>
+        👤 Finder name: <strong>{{ latest_scan.finder_name }}</strong>
     </p>
 
     <p class="mt-2">
-        📞 {{ latest_scan.finder_phone }}
+        📞 finder number: <strong>{{ latest_scan.finder_phone }}</strong>
     </p>
 
-    <a href="{% url 'view_report' latest_scan.id %}"
-       class="inline-block mt-4 bg-red-600 text-white px-4 py-2 rounded-lg">
-       View Details
-    </a>
+    <form method="POST" action="{% url 'mark_as_viewed' latest_scan.id %}">
+    {% csrf_token %}
+    <button type="submit" class="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+        Mark as Seen
+    </button>
+</form>
+
 </div>
 {% endif %}
 
@@ -92,7 +99,7 @@
     </div>
 {% endif %}
 
-<h2>Dashboard for {{ person.full_name }}</h2>
+<h2 style="font-size: 20px;font-weight: 30px;padding-top:10px;">Welcome, {{ request.user.username }}</h2>
 
 
 <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
@@ -258,7 +265,7 @@
       </div>
 
       <div class="flex flex-col gap-2.5 p-6 pt-3 border-t border-slate-100">
-        <a href="{% url 'profile_detail' uuid=profile.id %}" target="_blank" 
+        <a href="{% url 'missing_profile_detail' uuid=profile.id %}" target="_blank" 
            class="w-full h-11 inline-flex justify-center items-center px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 transition rounded-xl text-sm font-bold shadow-sm">
           View Details
         </a>

@@ -54,14 +54,6 @@
       {{ form.datetime }}
     </div>
 
-    <div class="mb-2">
-      <label class="block font-medium mb-1" for="map">Select Location on Map</label>
-      <div id="map" class="map-container"></div>
-    </div>
-
-    {{ form.latitude }}
-    {{ form.longitude }}
-
     <div>
       {{ form.location_notes.label_tag }}
       {{ form.location_notes }}
@@ -98,7 +90,7 @@
   </p>
 </div>
 
-      <p class="text-[10px] text-slate-400 mt-1">📞 Securely shared with the missing person's family registry panel to facilitate a quick return.</p>
+      <p class="text-[10px] text-slate-400 mt-1"> Securely shared with the missing person's family registry panel to facilitate a quick return.</p>
     </div>
 
     <button type="submit" class="w-full py-2 btn-primary rounded">Submit Found Report</button>
@@ -106,39 +98,3 @@
 
 </div>
 {% endblock %}
-
-{% block extra_js %}
-<script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&callback=initMap" async defer></script>
-<script>
-  // Robust Google Maps init (prevents page from breaking if API key is missing/invalid)
-  function initMap() {
-    try {
-      if (!window.google || !google.maps) {
-        console.warn('Google Maps JS not loaded (check GOOGLE_MAPS_API_KEY).');
-        return;
-      }
-
-      let map, marker;
-      const defaultPos = { lat: 20.5937, lng: 78.9629 };
-      map = new google.maps.Map(document.getElementById('map'), {
-        zoom: 5,
-        center: defaultPos,
-        mapTypeControl: false,
-      });
-
-      map.addListener('click', (e) => {
-        const location = e.latLng;
-        if (marker) { marker.setPosition(location); }
-        else { marker = new google.maps.Marker({ position: location, map: map }); }
-
-        document.getElementById('id_latitude').value = location.lat();
-        document.getElementById('id_longitude').value = location.lng();
-      });
-    } catch (err) {
-      console.error('initMap failed:', err);
-    }
-  }
-</script>
-{% endblock %}
-
-

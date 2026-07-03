@@ -11,7 +11,7 @@ class VulnerableIndividualForm(forms.ModelForm):
         fields = [
             'full_name', 'age', 'photo', 'address',
             'emergency_contact_name', 'emergency_contact_phone',
-            'medical_notes', 'last_known_location'
+            'medical_notes', 'last_known_location','instructions_for_finder'
         ]
         widgets = {
             'full_name': forms.TextInput(attrs={
@@ -44,6 +44,10 @@ class VulnerableIndividualForm(forms.ModelForm):
             'last_known_location': forms.Textarea(attrs={
                 'class': 'block w-full rounded-lg border-slate-300 shadow-sm focus:border-accent focus:ring-accent sm:text-sm p-3 border h-24',
                 'placeholder': 'Coordinates or description of where they frequently go'
+            }),
+            'instructions_for_finder': forms.Textarea(attrs={
+                'class': 'block w-full rounded-lg border-slate-300 shadow-sm focus:border-accent focus:ring-accent sm:text-sm p-3 border h-24',
+                'placeholder': 'Instructions for anyone who finds this person'
             }),
         }
 
@@ -82,7 +86,6 @@ class VulnerableIndividualForm(forms.ModelForm):
 from django import forms
 
 class IncidentReportForm(forms.Form):
-    # Only keeping Name and Phone as requested
     citizen_name = forms.CharField(max_length=255, required=True, widget=forms.TextInput(attrs={
         'class': 'block w-full rounded-lg border-slate-300 shadow-sm focus:border-hope focus:ring-hope sm:text-sm p-3 border',
         'placeholder': 'Your Name'
@@ -92,7 +95,54 @@ class IncidentReportForm(forms.Form):
         'class': 'block w-full rounded-lg border-slate-300 shadow-sm focus:border-hope focus:ring-hope sm:text-sm p-3 border',
         'placeholder': 'Your Phone Number'
     }))
+    uploaded_image = forms.ImageField(required=True)
 
+    description = forms.CharField(widget=forms.Textarea)
+
+    location_notes = forms.CharField(required=True)
     # Keeping these as hidden fields so they can still capture the GPS
     latitude = forms.DecimalField(widget=forms.HiddenInput(), required=False)
     longitude = forms.DecimalField(widget=forms.HiddenInput(), required=False)
+
+    
+class CitizenFoundReportForm(forms.ModelForm):
+
+    datetime = forms.DateTimeField(
+        widget=forms.DateTimeInput(attrs={
+            "type": "datetime-local",
+            "class": "block w-full rounded-lg border p-3"
+        }),
+        required=True
+    )
+
+    location_notes = forms.CharField(
+        widget=forms.Textarea(attrs={
+            "rows":3,
+            "class":"block w-full rounded-lg border p-3",
+            "placeholder":"Where did you find them?"
+        })
+    )
+
+    class Meta:
+        model = IncidentReport
+
+        fields = [
+            "uploaded_image",
+            "description",
+            "latitude",
+            "longitude",
+            "finder_name",   
+            "finder_phone"
+
+        ]
+
+        widgets = {
+            "uploaded_image": forms.ClearableFileInput(attrs={
+                "class":"block w-full"
+            }),
+
+            "description": forms.Textarea(attrs={
+                "rows":4,
+                "class":"block w-full rounded-lg border p-3"
+            }),
+        }

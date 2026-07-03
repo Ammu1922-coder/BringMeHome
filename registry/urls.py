@@ -19,6 +19,8 @@ urlpatterns = [
     path('report_found_person/', views.incident_report_found, name='report_found_person'),
     path('found_alerts/', views.found_alerts, name='found_alerts'),
     path('gemini-chat/', views.gemini_chat, name='gemini_chat'),
+    path("missing/<uuid:uuid>/",views.missing_profile_detail,name='missing_profile_detail'),
+    path('mark-viewed/<uuid:report_id>/', views.mark_as_viewed, name='mark_as_viewed'),
     #family actions
     path('profile/delete/<uuid:uuid>/', views.delete_profile, name='delete_profile'),
     path('profile/report-missing/<uuid:uuid>/', views.report_missing, name='report_missing'),

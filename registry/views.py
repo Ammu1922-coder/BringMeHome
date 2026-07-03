@@ -4,7 +4,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import admin,messages
 from .models import VulnerableIndividual, IncidentReport, GeminMatchCache
-from .forms import VulnerableIndividualForm, IncidentReportForm
+from .forms import VulnerableIndividualForm, IncidentReportForm,CitizenFoundReportForm
 import os
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse, HttpResponseBadRequest
@@ -15,6 +15,7 @@ import json
 import re
 from django.conf import settings
 from django.db import transaction
+from django.utils import timezone
 
 
 
@@ -59,11 +60,6 @@ def safeguard_register_view(request):
     else:
         form = VulnerableIndividualForm(user=request.user)
     return render(request, 'registry/safeguard_register.html', {'form': form})
-
-@login_required
-def profile_detail(request, uuid):
-    individual = get_object_or_404(VulnerableIndividual, id=uuid)
-    return render(request, 'registry/detail.html', {'individual': individual})
 
 
 @login_required
@@ -147,36 +143,39 @@ def incident_report_missing(request):
 
 @login_required
 def incident_report_found(request):
-    """Citizen incident reporting view for a found person."""
-    if not request.user.is_authenticated:
-        return redirect('login')
-
+    # Security checks
     if getattr(request.user, 'role', None) not in (None, 'family'):
         return redirect('family_dashboard')
 
+    # Initialize the form variable outside the if/else logic
     if request.method == "POST":
-        form = IncidentReportForm(request.POST, request.FILES)
+        form = CitizenFoundReportForm(request.POST, request.FILES)
+        
         if form.is_valid():
+            # Process and save the data
             base_description = (form.cleaned_data['description'] or '').strip()
+
             incident = IncidentReport(
                 reporter=request.user,
                 report_type='found',
-                uploaded_image=form.cleaned_data.get('image'),
+                uploaded_image=form.cleaned_data.get('uploaded_image'),
                 description=base_description,
-                timestamp=form.cleaned_data['datetime'],
+                finder_name=form.cleaned_data.get('citizen_name'),
+                finder_phone=form.cleaned_data.get('citizen_phone'),
                 latitude=form.cleaned_data.get('latitude'),
                 longitude=form.cleaned_data.get('longitude'),
                 location_found=form.cleaned_data.get('location_notes') or "",
             )
             incident.save()
+            
             messages.success(request, "Thank you for reporting this individual found. We will notify relevant authorities.")
             return redirect('incident_success')
     else:
-        form = IncidentReportForm()
-    
-    api_key = getattr(settings, "GOOGLE_MAPS_API_KEY", "")
-    return render(request, "registry/incident_report_found.html", {"form": form, "GOOGLE_MAPS_API_KEY": api_key, "report_type": "found"})
- 
+        # Handle the initial GET request (loading the blank form)
+        form = CitizenFoundReportForm()
+
+    # Always return the form (whether it's blank or contained invalid user input)
+    return render(request, 'registry/incident_report_found.html', {'form': form})
 
 @login_required
 def found_alerts(request):
@@ -511,8 +510,8 @@ def delete_profile(request, uuid):
 def family_dashboard(request):
 
 
-    new_reports = IncidentReport.objects.filter(individual=person, is_viewed=False).order_by("-timestamp")
-
+    found_alerts = IncidentReport.objects.filter(individual__creator=request.user,report_type='found').order_by('-timestamp')[:10]
+    
     secured_profiles = VulnerableIndividual.objects.filter(
         creator=request.user,
         status__in=['safe', 'Safe', 'safeguard', 'Safeguard', 'active', 'Active']
@@ -541,21 +540,33 @@ def family_dashboard(request):
     is_viewed=False
     )
 
+    from django.utils import timezone
+
     latest_scan = IncidentReport.objects.filter(
-    individual__creator=request.user,
-    report_type='found',
-    is_viewed=False
+        individual__creator=request.user,
+        report_type='found',
+        is_viewed=False
     ).order_by('-timestamp').first()
 
+    show_just_now = False
+
+    if latest_scan:
+        difference = timezone.now() - latest_scan.timestamp
+
+        if difference.total_seconds() < 60:
+            show_just_now = True
+
+    
+
     return render(request, 'registry/dashboard.html', {
-        'person': person,
-        'new_reports': new_reports,
+
         'secured_profiles': secured_profiles,
         'active_missing': active_missing,
         'resolved_cases': resolved_cases,
         'new_found_alerts': new_found_alerts,
         'latest_scan': latest_scan,
         "new_reports": new_reports,
+        "show_just_now": show_just_now,
     })
 
 @login_required
@@ -633,43 +644,48 @@ def report_incident_auto(request):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
+def profile_detail(request, pk=None, uuid=None, **kwargs):
 
-def profile_detail(request, pk=None, **kwargs):
-    # Determine the ID regardless of whether Django calls it 'pk' or 'uuid'
-    profile_id = pk or kwargs.get('uuid')
+    profile_id = pk or uuid or kwargs.get('uuid')
     person = get_object_or_404(VulnerableIndividual, id=profile_id)
+
     action = request.GET.get('action')
-    
-    # 🕵️‍♂️ Case 1: Helpful citizen scanned the QR code
+
+    # =========================
+    # QR SCAN FLOW
+    # =========================
     if action == 'scan_report':
-        # Initialize form here so it always exists
         form = IncidentReportForm(request.POST or None)
-        
-        if request.method == 'POST':
+
+        if request.method == "POST":
             if form.is_valid():
-                # Manually create the object
-                report = IncidentReport(
+
+                IncidentReport.objects.create(
                     individual=person,
                     report_type='found',
-                    location_found="Captured via QR scan GPS form",
-                    description=(
-                        f"🚨 DIRECT QR SCAN REPORT\n"
-                        f"Reporter Name: {form.cleaned_data['citizen_name']}\n"
-                        f"Reporter Phone: {form.cleaned_data['citizen_phone']}\n"
-                    ),
+                    finder_name=form.cleaned_data['citizen_name'],
+                    finder_phone=form.cleaned_data['citizen_phone'],
+                    location_found=f"{form.cleaned_data.get('latitude')}, {form.cleaned_data.get('longitude')}",
+                    description="QR scan detected found person",
                     latitude=form.cleaned_data.get('latitude'),
-                    longitude=form.cleaned_data.get('longitude')
+                    longitude=form.cleaned_data.get('longitude'),
                 )
-                report.save()
-                return render(request, 'registry/incident_success.html', {'person': person})
-        
-        # Render the scan page with the form
-        return render(request, 'registry/public_scan_report.html', {'person': person, 'form': form})
-        
-    # 🏠 Case 2: Standard dashboard for the family/caretaker
-    return render(request, 'registry/dashboard.html', {'person': person})
 
+                return render(request, 'registry/incident_success.html', {
+                    'person': person
+                })
 
+        return render(request, 'registry/public_scan_report.html', {
+            'person': person,
+            'form': form
+        })
+
+    # =========================
+    # NORMAL PROFILE VIEW
+    # =========================
+    return render(request, 'registry/detail.html', {
+        'individual': person
+    })
 def view_report(request, report_id):
     report = get_object_or_404(IncidentReport, id=report_id)
 
@@ -690,15 +706,20 @@ def view_report(request, report_id):
     return render(request, "registry/detail.html", {"report": report, 'individual':report.individual,
     })
 
-# def view_report(request, report_id):
-#     report = get_object_or_404(IncidentReport, id=report_id)
-    
-#     # Add these print statements
-#     print(f"--- DEBUGGING REPORT ---")
-#     print(f"Individual: {report.individual}")
-#     print(f"Name: {report.individual.full_name if report.individual else 'No Individual'}")
-    
-#     report.is_viewed = True
-#     report.save()
-    
-#     return render(request, 'registry/detail.html', {'report': report})
+@login_required
+def missing_profile_detail(request, uuid):
+    individual = get_object_or_404(VulnerableIndividual, id=uuid)
+
+    return render(
+        request,
+        "registry/detail.html",   # or whatever template your missing profile should use
+        {
+            "individual": individual,
+        },
+    )
+
+def mark_as_viewed(request, report_id):
+    report = get_object_or_404(IncidentReport, id=report_id)
+    report.is_viewed = True
+    report.save()
+    return redirect('family_dashboard')
