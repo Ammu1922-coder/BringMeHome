@@ -107,6 +107,10 @@ class IncidentReport(models.Model):
         related_name='submitted_reports',
         help_text="The citizen reporter. Leave blank for anonymous reporting."
     )
+    description = models.TextField(
+    blank=True,
+    help_text="Details about the individual's appearance, behavior, or condition."
+    )
     report_type = models.CharField(
         max_length=10,
         choices=REPORT_TYPE_CHOICES,
@@ -115,6 +119,8 @@ class IncidentReport(models.Model):
     )
     uploaded_image = models.ImageField(
         upload_to='incident_photos/',
+        blank=True,
+        null=True,
         help_text="Photo of the found individual or scene."
     )
     location_found = models.TextField(help_text="Address or description of where they were found.")

@@ -95,12 +95,11 @@ class IncidentReportForm(forms.Form):
         'class': 'block w-full rounded-lg border-slate-300 shadow-sm focus:border-hope focus:ring-hope sm:text-sm p-3 border',
         'placeholder': 'Your Phone Number'
     }))
-    uploaded_image = forms.ImageField(required=True)
+    uploaded_image = forms.ImageField(required=False)
 
-    description = forms.CharField(widget=forms.Textarea)
+    description = forms.CharField(widget=forms.Textarea,required=False)
 
-    location_notes = forms.CharField(required=True)
-    # Keeping these as hidden fields so they can still capture the GPS
+    location_notes = forms.CharField(required=False)
     latitude = forms.DecimalField(widget=forms.HiddenInput(), required=False)
     longitude = forms.DecimalField(widget=forms.HiddenInput(), required=False)
 
@@ -132,8 +131,7 @@ class CitizenFoundReportForm(forms.ModelForm):
             "latitude",
             "longitude",
             "finder_name",   
-            "finder_phone"
-
+            "finder_phone",
         ]
 
         widgets = {

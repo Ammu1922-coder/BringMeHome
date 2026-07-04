@@ -73,17 +73,6 @@ def digital_id_card(request, uuid):
 
 def generate_poster(request, uuid):
     individual = get_object_or_404(VulnerableIndividual, id=uuid)
-
-    print("========== POSTER ==========")
-    print("ID:", individual.id)
-    print("Name:", individual.full_name)
-    print("Age:", individual.age)
-    print("Address:", individual.address)
-    print("Emergency Contact:", individual.emergency_contact_name)
-    print("Phone:", individual.emergency_contact_phone)
-    print("Medical Notes:", individual.medical_notes)
-    print("Last Known:", individual.last_known_location)
-
     return render(request, "registry/poster.html", {
         "individual": individual
     })
@@ -550,6 +539,7 @@ def family_dashboard(request):
 
     show_just_now = False
 
+
     if latest_scan:
         difference = timezone.now() - latest_scan.timestamp
 
@@ -643,7 +633,6 @@ def report_incident_auto(request):
         
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
-
 def profile_detail(request, pk=None, uuid=None, **kwargs):
 
     profile_id = pk or uuid or kwargs.get('uuid')
@@ -651,60 +640,61 @@ def profile_detail(request, pk=None, uuid=None, **kwargs):
 
     action = request.GET.get('action')
 
-    # =========================
-    # QR SCAN FLOW
-    # =========================
-    if action == 'scan_report':
+    # ==========================================
+    # QR SCAN PAGE (Citizen)
+    # ==========================================
+    if action == "scan_report":
+
         form = IncidentReportForm(request.POST or None)
 
         if request.method == "POST":
+
             if form.is_valid():
-
-                IncidentReport.objects.create(
+                    IncidentReport.objects.create(
                     individual=person,
-                    report_type='found',
-                    finder_name=form.cleaned_data['citizen_name'],
-                    finder_phone=form.cleaned_data['citizen_phone'],
-                    location_found=f"{form.cleaned_data.get('latitude')}, {form.cleaned_data.get('longitude')}",
-                    description="QR scan detected found person",
-                    latitude=form.cleaned_data.get('latitude'),
-                    longitude=form.cleaned_data.get('longitude'),
-                )
+                    report_type="found",
+                    finder_name=form.cleaned_data["citizen_name"],
+                    finder_phone=form.cleaned_data["citizen_phone"],
+                    location_found = (request.POST.get("location_name")or f"{form.cleaned_data.get('latitude')}, {form.cleaned_data.get('longitude')}"),
+                    latitude=form.cleaned_data.get("latitude"),
+                    longitude=form.cleaned_data.get("longitude"),
+                    uploaded_image=form.cleaned_data.get("uploaded_image"),
+                    description=form.cleaned_data.get("description", ""),
+                    )
 
-                return render(request, 'registry/incident_success.html', {
-                    'person': person
-                })
+                    return render(request, "registry/incident_success.html", {"person": person})
+                        
+          
 
-        return render(request, 'registry/public_scan_report.html', {
-            'person': person,
-            'form': form
-        })
+        return render(
+            request,
+            "registry/public_scan_report.html",
+            {
+                "person": person,
+                "form": form,
+            }
+        )
 
-    # =========================
-    # NORMAL PROFILE VIEW
-    # =========================
-    return render(request, 'registry/detail.html', {
-        'individual': person
-    })
+    # ==========================================
+    # FAMILY PROFILE DETAILS
+    # ==========================================
+    return render(
+        request,
+        "registry/detail.html",
+        {
+            "individual": person,
+        }
+    )
+
 def view_report(request, report_id):
     report = get_object_or_404(IncidentReport, id=report_id)
 
-    print("========== REPORT ==========")
-    print("Report ID:", report.id)
-    print("Individual:", report.individual)
-
     if report.individual:
-        print("Individual ID:", report.individual.id)
-        print("Name:", report.individual.full_name)
-        print("Emergency Contact:", report.individual.emergency_contact_name)
-        print("Phone:", report.individual.emergency_contact_phone)
-        print("Address:", report.individual.address)
+        report.is_viewed = True
+        report.save()
 
-    report.is_viewed = True
-    report.save()
-
-    return render(request, "registry/detail.html", {"report": report, 'individual':report.individual,
-    })
+        return render(request, "registry/detail.html", {"report": report, 'individual':report.individual,
+        })
 
 @login_required
 def missing_profile_detail(request, uuid):
