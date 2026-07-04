@@ -19,68 +19,73 @@
   </div>
 
   {% if matches %}
-    {% if matches|length > 0 %}
-      <div class="grid grid-cols-1 gap-8">
-        {% for match in matches %}
-          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden {% if match.confidence >= 70 %}border-green-400{% endif %}">
-            <div class="p-6 pb-4 bg-slate-50">
-              <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                <div>
-                  <p class="text-xs font-bold uppercase tracking-widest text-accent">Match Score</p>
-                  <p class="text-2xl font-black {% if match.confidence >= 70 %}text-hope{% else %}text-primary{% endif %}">{{ match.confidence|floatformat:0 }}%</p>
-                </div>
-
-                <div class="text-left sm:text-right">
-                  <p class="text-xs font-bold uppercase tracking-widest text-slate-500">Matched With</p>
-                  <p class="font-extrabold text-primary">{{ match.profile.full_name }}</p>
-                </div>
-              </div>
+    <div class="grid grid-cols-1 gap-8">
+      {% for match in matches %}
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden {% if match.confidence >= 70 %}border-green-400{% endif %}">
+          
+          <!-- Finder Info Header -->
+          <div class="p-4 bg-slate-100 border-b border-slate-200 flex justify-between items-center">
+            <div>
+              <p class="text-[10px] font-black uppercase tracking-widest text-slate-500">Found By</p>
+              <p class="text-sm font-bold text-slate-800">{{ match.report.finder_name|default:"Anonymous" }}</p>
             </div>
-
-            <div class="p-6 pt-4">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="text-center">
-                  <p class="text-sm font-bold text-slate-700 mb-3">Registered Missing Person</p>
-                  {% if match.profile.photo %}
-                    <img src="{{ match.profile.photo.url }}" alt="{{ match.profile.full_name }}" class="w-full h-52 object-cover rounded-xl border border-slate-200" />
-                  {% else %}
-                    <div class="w-full h-52 bg-slate-100 rounded-xl border border-slate-200 flex items-center justify-center text-xs text-slate-500">No Photo</div>
-                  {% endif %}
-                </div>
-
-                <div class="text-center">
-                  <p class="text-sm font-bold text-slate-700 mb-3">Sighting Report Photo</p>
-                  {% if match.report.uploaded_image %}
-                    <img src="{{ match.report.uploaded_image.url }}" alt="Sighting" class="w-full h-52 object-cover rounded-xl border border-slate-200" />
-                  {% else %}
-                    <div class="w-full h-52 bg-slate-100 rounded-xl border border-slate-200 flex items-center justify-center text-xs text-slate-500">No Photo</div>
-                  {% endif %}
-                  <p class="mt-3 text-xs text-slate-600">Reported {{ match.report.timestamp|date:"Y-m-d" }}</p>
-                </div>
-              </div>
-
-              <div class="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div>
-                  <p class="text-sm font-bold text-primary">AI Confidence Score</p>
-                  <p class="text-sm text-slate-600 {% if match.confidence >= 70 %}text-hope font-bold{% endif %}">{{ match.confidence|floatformat:0 }}% Match Found</p>
-                  {% if match.reason %}
-                    <p class="text-xs text-slate-500 mt-1">{{ match.reason }}</p>
-                  {% endif %}
-
-                </div>
-                <a href="#" class="inline-flex items-center justify-center px-6 py-3 rounded-xl font-bold bg-primary text-white hover:bg-primary-light transition" onclick="let r = '{{ match.reason|escapejs }}'.replace(/\\n/g, '\n').replace(/\*\*/g, ''); alert('Match Score: {{ match.confidence|floatformat:0 }}%\n\n' + r); return false;">View Details</a>
-              </div>
-              
+            <div class="text-right">
+              <p class="text-[10px] font-black uppercase tracking-widest text-slate-500">Contact</p>
+              <a href="tel:{{ match.report.finder_phone }}" class="text-sm font-bold text-blue-600 hover:underline">
+                {{ match.report.finder_phone|default:"No Number" }}
+              </a>
             </div>
           </div>
-        {% endfor %}
-      </div>
-    {% else %}
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-10 text-center">
-        <p class="text-slate-700 font-bold">Searching for matches...</p>
-        <p class="text-slate-500 mt-2">No sightings reported yet.</p>
-      </div>
-    {% endif %}
+          <div class="p-6 pb-4 bg-slate-50">
+            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+              <div>
+                <p class="text-xs font-bold uppercase tracking-widest text-accent">Match Score</p>
+                <p class="text-2xl font-black {% if match.confidence >= 70 %}text-hope{% else %}text-primary{% endif %}">{{ match.confidence|floatformat:0 }}%</p>
+              </div>
+              <div class="text-left sm:text-right">
+                <p class="text-xs font-bold uppercase tracking-widest text-slate-500">Matched With</p>
+                <p class="font-extrabold text-primary">{{ match.profile.full_name }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-6 pt-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="text-center">
+                <p class="text-sm font-bold text-slate-700 mb-3">Registered Missing Person</p>
+                {% if match.profile.photo %}
+                  <img src="{{ match.profile.photo.url }}" alt="{{ match.profile.full_name }}" class="w-full h-52 object-cover rounded-xl border border-slate-200" />
+                {% else %}
+                  <div class="w-full h-52 bg-slate-100 rounded-xl border border-slate-200 flex items-center justify-center text-xs text-slate-500">No Photo</div>
+                {% endif %}
+              </div>
+              <div class="text-center">
+                <p class="text-sm font-bold text-slate-700 mb-3">Sighting Report Photo</p>
+                {% if match.report.uploaded_image %}
+                  <img src="{{ match.report.uploaded_image.url }}" alt="Sighting" class="w-full h-52 object-cover rounded-xl border border-slate-200" />
+                {% else %}
+                  <div class="w-full h-52 bg-slate-100 rounded-xl border border-slate-200 flex items-center justify-center text-xs text-slate-500">No Photo</div>
+                {% endif %}
+                <p class="mt-3 text-xs text-slate-600">Reported {{ match.report.timestamp|date:"Y-m-d" }}</p>
+              </div>
+            </div>
+
+            <div class="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <p class="text-sm font-bold text-primary">AI Confidence Score</p>
+                <p class="text-sm text-slate-600 {% if match.confidence >= 70 %}text-hope font-bold{% endif %}">{{ match.confidence|floatformat:0 }}% Match Found</p>
+              </div>
+              <a href="#" class="inline-flex items-center justify-center px-6 py-3 rounded-xl font-bold bg-primary text-white hover:bg-primary-light transition" onclick="alert('Match Score: {{ match.confidence|floatformat:0 }}%\n\n{{ match.reason|escapejs }}'); return false;">View Details</a>
+            </div>
+          </div>
+        </div>
+      {% empty %}
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-10 text-center">
+          <p class="text-slate-700 font-bold">Searching for matches...</p>
+          <p class="text-slate-500 mt-2">No sightings reported yet.</p>
+        </div>
+      {% endfor %}
+    </div>
   {% else %}
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-10 text-center">
       <p class="text-slate-700 font-bold">Searching for matches...</p>
@@ -89,6 +94,3 @@
   {% endif %}
 </div>
 {% endblock %}
-
-
-
