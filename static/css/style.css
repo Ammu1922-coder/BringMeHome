@@ -10,6 +10,13 @@
   --color-hope-dark: #16a34a;
   --color-brandBg: #F8FAFC;
 }
+
+/* Ensure the body doesn't clip the chatbot */
+body {
+    overflow-x: hidden; 
+    min-height: 100vh;
+}
+
 /* Background and text color utilities */
 .bg-primary { background-color: var(--color-primary); }
 .bg-primary-light { background-color: var(--color-primary-light); }
@@ -31,7 +38,7 @@
 .text-slate-500 { color: #64748b; }
 .text-slate-600 { color: #475569; }
 .text-slate-700 { color: #334155; }
-.text-slate-800 { color: #1e293b; }
+
 /* Layout utilities */
 .flex { display: flex; }
 .flex-col { flex-direction: column; }
@@ -72,8 +79,30 @@
 .uppercase { text-transform: uppercase; }
 .leading-tight { line-height: 1.25; }
 .leading-relaxed { line-height: 1.625; }
-/* Additional utilities */
 .hidden { display: none; }
 .block { display: block; }
 .inline-block { display: inline-block; }
 .cursor-pointer { cursor: pointer; }
+
+/* Responsive Mobile Overrides */
+@media (max-width: 640px) {
+    #chat-panel, .chat-window, .chat-container {
+        width: 90vw !important;
+        right: 5vw !important;
+        bottom: 5rem !important;
+        max-height: 70vh !important;
+        position: fixed !important;
+    }
+
+    .chat-messages {
+        height: 50vh !important;
+    }
+}
+
+/* Force the widget to ignore parent container limits */
+#ai-chat-widget {
+    position: fixed !important;
+    bottom: 20px !important;
+    right: 20px !important;
+    z-index: 9999 !important;
+}
